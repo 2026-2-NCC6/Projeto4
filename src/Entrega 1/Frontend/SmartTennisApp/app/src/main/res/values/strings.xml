@@ -1,0 +1,19 @@
+<resources>
+    <!--Splash Screen-->
+    <string name="app_name">SmartTennisApp</string>
+    <string name="splash_screen">Começe a sua jornada</string>
+    <string name="btn_entrar">Entrar</string>
+
+    <!--Login-->
+    <string name="input_email_login">E-Mail:</string>
+    <string name="input_senha_login">Senha:</string>
+    <string name="btn_cadastro_login">Não tem uma conta? Cadastre-se aqui!</string>
+
+    <!--Cadastro-->
+    <string name="btn_cadastro_cadastro">Cadastrar-se</string>
+    <string name="btn_voltar_cadastro">Voltar</string>
+    <string name="input_nome_cadastro">Nome:</string>
+
+    <!--HomePage-->
+    <string name="nomeUsuario">Olá, </string>
+</resources>
