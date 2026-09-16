@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "body-parser": "^2.3.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "fs": "^0.0.1-security",
+    "multer": "^2.3.0",
+    "mysql2": "^3.24.2",
+    "path": "^0.12.7"
+  }
+}

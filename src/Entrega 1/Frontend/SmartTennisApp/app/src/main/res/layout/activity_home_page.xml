@@ -29,7 +29,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/imagePerfilHomeBtn"
             android:layout_width="85dp"
             android:layout_height="85dp"
@@ -80,7 +80,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/imageButtonExerciciosHome"
             android:layout_width="60dp"
             android:layout_height="60dp"
@@ -93,7 +93,7 @@
             app:layout_constraintVertical_bias="0.0"
             app:srcCompat="@drawable/exerciciosicon" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/imageButtonEstatisticaHome"
             android:layout_width="60dp"
             android:layout_height="60dp"
@@ -104,7 +104,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/estatisticaicon" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/imageButtonPerfilHome"
             android:layout_width="60dp"
             android:layout_height="60dp"

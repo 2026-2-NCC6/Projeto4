@@ -13,7 +13,11 @@
     <string name="btn_cadastro_cadastro">Cadastrar-se</string>
     <string name="btn_voltar_cadastro">Voltar</string>
     <string name="input_nome_cadastro">Nome:</string>
+    <string name="input_data_nascimento_cadastro">Data de Nascimento: dd/mm/YYYY</string>
 
     <!--HomePage-->
     <string name="nomeUsuario">Olá, </string>
+
+    <!--Perfil-->
+    <string name="btn_sair">Sair</string>
 </resources>

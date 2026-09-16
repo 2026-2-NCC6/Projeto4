@@ -1,8 +1,10 @@
 package com.example.smarttennisapp;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -35,29 +37,57 @@ public class HomePage extends AppCompatActivity {
         ).build();
 
         //Essencial para buscar os dados ;)
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-
         SharedPreferences prefs = getSharedPreferences("UserData", MODE_PRIVATE);
         int id = prefs.getInt("id", 0);
-
-        executor.execute(()->{
-            usuario = db.usuarioDAO().getUserById(id);
-        });
+        ExecutorService executor = Executors.newSingleThreadExecutor();
 
         TextView welcome = findViewById(R.id.textNomePerfilHome);
-        ImageButton perfilTop = findViewById(R.id.imageButtonPerfilHome);
-        ImageButton exerciciosBtn = findViewById(R.id.imageButtonExerciciosHome);
-        ImageButton estatistica = findViewById(R.id.imageButtonEstatisticaHome);
-        ImageButton perfil = findViewById(R.id.imageButtonPerfilHome);
+        executor.execute(() -> {
+            Usuario usuario = db.usuarioDAO().getUserById(id);
+            runOnUiThread(() -> {
+                if (usuario != null) {
+                    String mensagemWelcome =
+                            getString(R.string.nomeUsuario) + usuario.nome;
+                    welcome.setText(mensagemWelcome);
+                }
+            });
+        });
+        ImageView perfilTop = findViewById(R.id.imageButtonPerfilHome);
+        ImageView exerciciosBtn = findViewById(R.id.imageButtonExerciciosHome);
+        ImageView estatistica = findViewById(R.id.imageButtonEstatisticaHome);
+        ImageView perfil = findViewById(R.id.imageButtonPerfilHome);
 
-        String mensagemWelcome = getString(R.string.nomeUsuario) + usuario.nome;
+        estatistica.setOnClickListener(view->{
+            Intent intent = new Intent(this, Estatiscas.class);
+            startActivity(intent);
+        });
 
-        welcome.setText(mensagemWelcome);
+        perfil.setOnClickListener(view->{
+            Intent intent = new Intent(this, MeuPerfil.class);
+            startActivity(intent);
+        });
+
+        perfilTop.setOnClickListener(view->{
+            Intent intent = new Intent(this, MeuPerfil.class);
+            startActivity(intent);
+        });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SharedPreferences prefs = getSharedPreferences("UserData", MODE_PRIVATE);
+        int id = prefs.getInt("id", 440);
+        if(id == 440){
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        }
     }
 }

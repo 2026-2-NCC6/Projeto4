@@ -23,6 +23,8 @@ import java.util.concurrent.Executors;
 
 public class Cadastro extends AppCompatActivity {
 
+    Usuario usuario = new Usuario();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +40,7 @@ public class Cadastro extends AppCompatActivity {
         TextInputEditText email = findViewById(R.id.editEmailCadastroInput);
         TextInputEditText senha = findViewById(R.id.editSenhaCadastroInput);
         TextInputEditText nome = findViewById(R.id.editNomeCadastroInput);
+        TextInputEditText dataNascimento = findViewById(R.id.editNascimentoCadastroInput);
         Button btnCadastro = findViewById(R.id.btnCadastroCadastro);
         Button btnVoltar = findViewById(R.id.btnVoltarCadastro);
 
@@ -49,27 +52,31 @@ public class Cadastro extends AppCompatActivity {
             String emailText = Objects.requireNonNull(email.getText()).toString();
             String senhaText = Objects.requireNonNull(senha.getText()).toString();
             String nomeText = Objects.requireNonNull(nome.getText()).toString();
+            String dataNascimentoText = Objects.requireNonNull(dataNascimento.getText()).toString();
 
-            if(emailText.isBlank() || senhaText.isBlank() || nomeText.isBlank()){
+
+            if(emailText.isBlank() || senhaText.isBlank() || nomeText.isBlank() || dataNascimentoText.isBlank()){
                 Toast.makeText(this, "Preencha todos os campos!", Toast.LENGTH_SHORT).show();
             }else{
-                Usuario usuario = new Usuario();
-                usuario.nome = nomeText;
-                usuario.senha = senhaText;
-                usuario.email = emailText;
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 executor.execute(() -> {
+                    usuario = new Usuario();
+                    usuario.nome = nomeText;
+                    usuario.senha = senhaText;
+                    usuario.email = emailText;
+                    usuario.data = dataNascimentoText;
                     db.usuarioDAO().insert(usuario);
-                });
-
-                executor.execute(()->{
-                    int id = db.usuarioDAO().getIdByName(nomeText);
-                    SharedPreferences prefs = getSharedPreferences("UserData", MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putInt("id", id);
-                    editor.apply();
-                    Intent intent = new Intent(this, HomePage.class);
-                    startActivity(intent);
+                    int id = db.usuarioDAO().getIdByEmail(emailText);
+                    SharedPreferences prefs =
+                            getSharedPreferences("UserData", MODE_PRIVATE);
+                    prefs.edit()
+                            .putInt("id", id)
+                            .apply();
+                    runOnUiThread(() -> {
+                        Intent intent = new Intent(this, HomePage.class);
+                        startActivity(intent);
+                        finish();
+                    });
                 });
             }
         });

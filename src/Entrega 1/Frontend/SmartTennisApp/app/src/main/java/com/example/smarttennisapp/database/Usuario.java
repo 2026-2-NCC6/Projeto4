@@ -11,4 +11,5 @@ public class Usuario {
     public String email;
     //NÃO ARMAZENAR A SENHA AQUI!!
     public String senha;
+    public String data;
 }

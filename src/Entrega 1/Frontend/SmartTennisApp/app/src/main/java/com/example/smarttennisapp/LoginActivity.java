@@ -47,28 +47,44 @@ public class LoginActivity extends AppCompatActivity {
         TextInputEditText emailLoginInput = findViewById(R.id.editEmailLoginInput);
         TextInputEditText senhaLoginInput = findViewById(R.id.editSenhaLoginInput);
 
-        btnEntrar.setOnClickListener(view ->{
+        btnEntrar.setOnClickListener(view -> {
             String email = Objects.requireNonNull(emailLoginInput.getText()).toString();
             String senha = Objects.requireNonNull(senhaLoginInput.getText()).toString();
-            if (email.isBlank() || senha.isBlank()){
-                Toast.makeText(this, "Preencha todos os campos para continuar", Toast.LENGTH_SHORT).show();
-            }else{
-                //Autenticação com o backend aqui
-
-                executor.execute(()->{
-                    int id = db.usuarioDAO().getIdByName(email);
-                    SharedPreferences prefs = getSharedPreferences("UserData", MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putInt("id", id);
-                    editor.apply();
-                    Intent intent = new Intent(this, HomePage.class);
-                    startActivity(intent);
-                    finish();
+            if (email.isBlank() || senha.isBlank()) {
+                Toast.makeText(
+                        this,
+                        "Preencha todos os campos para continuar",
+                        Toast.LENGTH_SHORT
+                ).show();
+            } else {
+                executor.execute(() -> {
+                    int id = db.usuarioDAO().getIdByEmail(email);
+                    runOnUiThread(() -> {
+                        if (id > 0) {
+                            Usuario usuario = db.usuarioDAO().getUserById(id);
+                            if(usuario.senha.equals(senha)){
+                                SharedPreferences prefs =
+                                        getSharedPreferences("UserData", MODE_PRIVATE);
+                                prefs.edit()
+                                        .putInt("id", id)
+                                        .apply();
+                                Intent intent = new Intent(this, HomePage.class);
+                                startActivity(intent);
+                                finish();
+                            }else{
+                                Toast.makeText(this, "Senha incorreta", Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(
+                                    this,
+                                    "Usuário não encontrado",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                        }
+                    });
                 });
-
             }
         });
-
         btnCadastroLogin.setOnClickListener(view->{
             Intent intent = new Intent(this, Cadastro.class);
             String email = Objects.requireNonNull(emailLoginInput.getText()).toString();

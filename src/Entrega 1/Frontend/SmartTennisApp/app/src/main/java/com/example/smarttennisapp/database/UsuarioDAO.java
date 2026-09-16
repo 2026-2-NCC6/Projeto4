@@ -19,7 +19,7 @@ public interface UsuarioDAO {
     @Query("SELECT id FROM Usuario WHERE nome = :nome")
     int getIdByName(String nome);
 
-    @Query("SELECT id FROM Usuario WHERE email = :email")
+    @Query("SELECT id FROM Usuario WHERE email = :email LIMIT 1")
     int getIdByEmail(String email);
 
     @Update
