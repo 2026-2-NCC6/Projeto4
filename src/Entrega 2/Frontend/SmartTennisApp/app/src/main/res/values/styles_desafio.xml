@@ -1,0 +1,17 @@
+<resources>
+    <style name="DesafioCampoLabel" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:layout_marginTop">18dp</item>
+        <item name="android:layout_marginBottom">7dp</item>
+        <item name="android:textColor">#D5DCE2</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="DesafioCampo" parent="Widget.AppCompat.EditText">
+        <item name="android:background">@drawable/bg_busca_treino</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorHint">#89939D</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+</resources>

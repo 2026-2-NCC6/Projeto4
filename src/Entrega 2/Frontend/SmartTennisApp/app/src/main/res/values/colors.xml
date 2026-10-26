@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cores legadas do projeto: preservadas para não quebrar telas existentes. -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="cinza">#656970</color>
+    <color name="vermelho">#B30C00</color>
+    <color name="cor_tema">#FE914E</color>
+
+    <!-- Paleta SmartTennis usada por activity_rali_na_parede.xml e telas novas. -->
+    <color name="st_background">#0F1620</color>
+    <color name="st_surface">#17212B</color>
+    <color name="st_surface_alt">#202D3A</color>
+    <color name="st_accent">#B17AFF</color>
+    <color name="st_text_primary">#F4F7FA</color>
+    <color name="st_text_secondary">#A6B0BA</color>
+    <color name="st_success">#66D19E</color>
+    <color name="st_warning">#FFC857</color>
+    <color name="st_danger">#FF6B6B</color>
+    <color name="st_border">#344250</color>
+
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="surface_accent_dark">#1E293B</color>
+    <color name="accent_text">#F8F9FA</color>
+    <color name="surface_secondary">#1F2937</color>
+    <color name="surface_primary">#121212</color>
+    <color name="text_muted">#9CA3AF</color>
+    <color name="surface_border">#374151</color>
+    <color name="danger_button">#991B1B</color>
+    <color name="st_accent_container">#1E3A8A</color>
+</resources>

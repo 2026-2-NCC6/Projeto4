@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="14dp"
+    android:background="@drawable/bg_card_treino"
+    android:orientation="vertical"
+    android:padding="18dp">
+
+    <!-- Categoria e origem -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/txtCategoriaTreino"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="FUNDAMENTOS"
+            android:textColor="@color/accent"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            tools:text="FUNDAMENTOS" />
+
+        <TextView
+            android:id="@+id/txtOrigemTreino"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_tag_origem"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:text="OFFLINE"
+            android:textColor="#B8C5CF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            tools:text="OFFLINE" />
+
+    </LinearLayout>
+
+    <!-- Nome -->
+    <TextView
+        android:id="@+id/txtNomeTreino"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Consistência no Forehand"
+        android:textColor="@color/text_primary"
+        android:textSize="19sp"
+        android:textStyle="bold"
+        tools:text="Consistência no Forehand" />
+
+    <!-- Descrição -->
+    <TextView
+        android:id="@+id/txtDescricaoTreino"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:text="Pratique a regularidade dos seus golpes de forehand e melhore o controle da raquete."
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        android:lineSpacingExtra="3dp"
+        tools:text="Pratique a regularidade dos seus golpes de forehand e melhore o controle da raquete." />
+
+    <!-- Duração e dificuldade -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/txtDuracaoTreino"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableStart="@android:drawable/ic_menu_recent_history"
+            android:drawablePadding="6dp"
+            android:gravity="center_vertical"
+            android:text="15 min"
+            android:textColor="#D5DCE2"
+            android:textSize="13sp"
+            tools:text="15 min" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:background="#3A444D" />
+
+        <TextView
+            android:id="@+id/txtDificuldadeTreino"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Iniciante"
+            android:textColor="@color/accent"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="Iniciante" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/txtEtapasTreino"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_tag_treino" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="8dp" android:paddingBottom="8dp"
+        android:text="🎾 6 etapas · IoT Bluetooth"
+        android:textColor="@color/accent"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <!-- Ação -->
+    <Button
+        android:id="@+id/btnIniciarTreinoGuiado"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="18dp"
+        android:backgroundTint="@color/accent"
+        android:text="Começar treino"
+        android:textAllCaps="false"
+        android:textColor="@color/accent_text"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:cornerRadius="12dp" />
+
+    <LinearLayout
+        android:id="@+id/acoesDesafioPersonalizado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/btnEditarTreinoGuiado"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/surface_secondary"
+            android:text="Editar"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary" />
+
+        <Button
+            android:id="@+id/btnExcluirTreinoGuiado"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:backgroundTint="#502A30"
+            android:text="Excluir"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary" />
+    </LinearLayout>
+
+</LinearLayout>

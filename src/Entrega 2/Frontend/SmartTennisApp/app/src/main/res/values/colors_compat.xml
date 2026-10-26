@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Aliases compatíveis com referências usadas pelo TreinoLivre.java. -->
+    <color name="accent">#B17AFF</color>
+    <color name="danger">#FF6B6B</color>
+    <color name="text_secondary">#A6B0BA</color>
+</resources>

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_background"
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
+    tools:context=".TreinoGuiadoLista">
+
+    <!-- Cabeçalho padronizado: voltar sempre no canto superior esquerdo. -->
+    <ImageButton
+        android:id="@+id/btnVoltarTreinos"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_back_button"
+        android:contentDescription="Voltar"
+        android:padding="11dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/setavoltar"
+        app:tint="@color/text_primary"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/txtTituloTreinos"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="18dp"
+        android:text="Treino guiado"
+        android:textColor="@color/text_primary"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnVoltarTreinos"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/txtSubtituloTreinos"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Treinos por Bluetooth com a raquete: complete missões, faça combos e suba de nível."
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/txtTituloTreinos"
+        app:layout_constraintStart_toStartOf="@id/txtTituloTreinos"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Busca -->
+    <EditText
+        android:id="@+id/edtBuscarTreino"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="22dp"
+        android:background="@drawable/bg_busca_treino"
+        android:hint="Buscar treino..."
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:singleLine="true"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_muted"
+        android:textSize="15sp"
+        android:drawableStart="@android:drawable/ic_menu_search"
+        android:drawablePadding="10dp"
+        android:inputType="text"
+        android:imeOptions="actionSearch"
+        app:layout_constraintTop_toBottomOf="@id/txtSubtituloTreinos"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Filtros -->
+    <HorizontalScrollView
+        android:id="@+id/scrollFiltrosTreinos"
+        android:layout_width="0dp"
+        android:layout_height="46dp"
+        android:layout_marginTop="16dp"
+        android:fillViewport="false"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/edtBuscarTreino"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnFiltroTodos"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/accent"
+                android:minWidth="0dp"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:text="Todos"
+                android:textAllCaps="false"
+                android:textColor="@color/accent_text"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnFiltroOffline"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/surface_secondary"
+                android:minWidth="0dp"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:text="Meus desafios"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary" />
+
+
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <Button
+        android:id="@+id/btnCriarDesafioLista"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="14dp"
+        android:backgroundTint="@color/accent"
+        android:text="＋ Criar desafio personalizado"
+        android:textAllCaps="false"
+        android:textColor="@color/accent_text"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:cornerRadius="14dp"
+        app:layout_constraintTop_toBottomOf="@id/scrollFiltrosTreinos"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Título da lista -->
+    <TextView
+        android:id="@+id/txtListaTreinos"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="12dp"
+        android:text="MISSÕES DE TREINO"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.08"
+        app:layout_constraintTop_toBottomOf="@id/btnCriarDesafioLista"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Lista dinâmica -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerTreinos"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingTop="2dp"
+        android:paddingBottom="16dp"
+        android:scrollbars="vertical"
+        app:layout_constraintTop_toBottomOf="@id/txtListaTreinos"
+        android:layout_marginBottom="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/item_treino_guiado" />
+
+    <!-- Estado vazio -->
+    <TextView
+        android:id="@+id/txtListaVazia"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="Nenhum treino encontrado."
+        android:textColor="@color/text_secondary"
+        android:textSize="15sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/recyclerTreinos"
+        app:layout_constraintBottom_toBottomOf="@id/recyclerTreinos"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Indicador de carregamento -->
+    <ProgressBar
+        android:id="@+id/progressoTreinos"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:indeterminateTint="@color/accent"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/recyclerTreinos"
+        app:layout_constraintBottom_toBottomOf="@id/recyclerTreinos"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

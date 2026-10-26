@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mainEstatisticas"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/st_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp">
+
+        <ImageButton
+            android:id="@+id/btnVoltarEstatisticas"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_back_button"
+            android:contentDescription="Voltar"
+            android:padding="11dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/setavoltar"
+            app:tint="@color/st_text_primary" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.12"
+                android:text="SMARTTENNIS"
+                android:textColor="@color/st_accent"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Estatísticas"
+                android:textColor="@color/st_text_primary"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_accent_badge"
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="6dp"
+            android:text="SEU JOGO"
+            android:textColor="@color/st_accent"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/scrollEstatisticas"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="false"
+        android:overScrollMode="ifContentScrolls"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Seu progresso, em perspectiva."
+                android:textColor="@color/st_text_primary"
+                android:textSize="25sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="16dp"
+                android:text="Dados reais dos seus treinos livres e guiados com a raquete IoT."
+                android:textColor="@color/st_text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/txtEstadoVazioStats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_stat_tile"
+                android:padding="14dp"
+                android:text="Ainda não há sessões registradas."
+                android:textColor="@color/st_text_secondary"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="@color/st_surface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="XP · SUA EVOLUÇÃO"
+                                android:textColor="@color/st_text_secondary"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/txtNivelStats"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="NÍVEL 1"
+                                android:textColor="@color/st_text_primary"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_icon_tile"
+                            android:gravity="center"
+                            android:text="🏆"
+                            android:textSize="25sp" />
+                    </LinearLayout>
+
+                    <ProgressBar
+                        android:id="@+id/barraXpStats"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="8dp"
+                        android:layout_marginTop="14dp"
+                        android:max="500"
+                        android:progress="0"
+                        android:progressBackgroundTint="@color/st_surface_alt"
+                        android:progressTint="@color/st_accent" />
+
+                    <TextView
+                        android:id="@+id/txtXpStats"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="0 / 500 XP para o próximo nível"
+                        android:textColor="@color/st_text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="104dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/st_surface"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SESSÕES" android:textColor="@color/st_text_secondary" android:textSize="10sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/txtTotalSessoes" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="0" android:textColor="@color/st_text_primary" android:textSize="27sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="registradas" android:textColor="@color/st_text_secondary" android:textSize="11sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="104dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/st_surface"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="vertical" android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TEMPO TOTAL" android:textColor="@color/st_text_secondary" android:textSize="10sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/txtTempoTotal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="0 min" android:textColor="@color/st_text_primary" android:textSize="23sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="em treino" android:textColor="@color/st_text_secondary" android:textSize="11sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="104dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/st_surface"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="vertical" android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="GOLPES" android:textColor="@color/st_text_secondary" android:textSize="10sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/txtTotalGolpesStats" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="0" android:textColor="@color/st_text_primary" android:textSize="25sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="classificados" android:textColor="@color/st_text_secondary" android:textSize="11sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <androidx.cardview.widget.CardView android:layout_width="0dp" android:layout_height="86dp" android:layout_marginEnd="6dp" android:layout_weight="1" app:cardBackgroundColor="@color/st_surface" app:cardCornerRadius="15dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="vertical" android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PONTOS EM DESAFIOS" android:textColor="@color/st_text_secondary" android:textSize="10sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/txtPontosTotaisStats" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="0" android:textColor="@color/st_accent" android:textSize="22sp" android:textStyle="bold" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView android:layout_width="0dp" android:layout_height="86dp" android:layout_marginStart="6dp" android:layout_weight="1" app:cardBackgroundColor="@color/st_surface" app:cardCornerRadius="15dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="vertical" android:padding="12dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MELHOR PONTUAÇÃO" android:textColor="@color/st_text_secondary" android:textSize="10sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/txtMelhorPontuacaoStats" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="—" android:textColor="@color/st_success" android:textSize="22sp" android:textStyle="bold" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="23dp" android:layout_marginBottom="10dp" android:text="Seu perfil técnico" android:textColor="@color/st_text_primary" android:textSize="18sp" android:textStyle="bold" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="@color/st_surface"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="15dp">
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Distribuição dos golpes" android:textColor="@color/st_text_primary" android:textSize="15sp" android:textStyle="bold" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="13dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="78dp" android:layout_height="wrap_content" android:text="Saque" android:textColor="@color/st_text_secondary" android:textSize="13sp" />
+                        <ProgressBar android:id="@+id/barraSaquesStats" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_height="7dp" android:layout_weight="1" android:max="100" android:progress="0" android:progressBackgroundTint="@color/st_surface_alt" android:progressTint="@color/st_accent" />
+                        <TextView android:id="@+id/txtSaquesStats" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="end" android:text="0" android:textColor="@color/st_text_primary" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="78dp" android:layout_height="wrap_content" android:text="Forehand" android:textColor="@color/st_text_secondary" android:textSize="13sp" />
+                        <ProgressBar android:id="@+id/barraForehandsStats" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_height="7dp" android:layout_weight="1" android:max="100" android:progress="0" android:progressBackgroundTint="@color/st_surface_alt" android:progressTint="@color/st_success" />
+                        <TextView android:id="@+id/txtForehandsStats" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="end" android:text="0" android:textColor="@color/st_text_primary" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="78dp" android:layout_height="wrap_content" android:text="Backhand" android:textColor="@color/st_text_secondary" android:textSize="13sp" />
+                        <ProgressBar android:id="@+id/barraBackhandsStats" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_height="7dp" android:layout_weight="1" android:max="100" android:progress="0" android:progressBackgroundTint="@color/st_surface_alt" android:progressTint="@color/st_warning" />
+                        <TextView android:id="@+id/txtBackhandsStats" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="end" android:text="0" android:textColor="@color/st_text_primary" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <androidx.cardview.widget.CardView android:layout_width="0dp" android:layout_height="95dp" android:layout_marginEnd="6dp" android:layout_weight="1" app:cardBackgroundColor="@color/st_surface" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="vertical" android:padding="13dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PRECISÃO" android:textColor="@color/st_text_secondary" android:textSize="10sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/txtPrecisaoStats" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="—" android:textColor="@color/st_success" android:textSize="25sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="nos desafios guiados" android:textColor="@color/st_text_secondary" android:textSize="11sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+                <androidx.cardview.widget.CardView android:layout_width="0dp" android:layout_height="95dp" android:layout_marginStart="6dp" android:layout_weight="1" app:cardBackgroundColor="@color/st_surface" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="vertical" android:padding="13dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MODALIDADE MAIS USADA" android:textColor="@color/st_text_secondary" android:textSize="10sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/txtModalidadeMaisUsadaStats" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="—" android:textColor="@color/st_text_primary" android:textSize="22sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="por número de sessões" android:textColor="@color/st_text_secondary" android:textSize="11sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="23dp" android:layout_marginBottom="10dp" android:text="Onde você treinou" android:textColor="@color/st_text_primary" android:textSize="18sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <androidx.cardview.widget.CardView android:layout_width="0dp" android:layout_height="82dp" android:layout_marginEnd="6dp" android:layout_weight="1" app:cardBackgroundColor="@color/st_surface" app:cardCornerRadius="14dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎯 Guiado" android:textColor="@color/st_text_secondary" android:textSize="12sp" />
+                        <TextView android:id="@+id/txtSessoesGuiadas" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0" android:textColor="@color/st_text_primary" android:textSize="22sp" android:textStyle="bold" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+                <androidx.cardview.widget.CardView android:layout_width="0dp" android:layout_height="82dp" android:layout_marginStart="6dp" android:layout_weight="1" app:cardBackgroundColor="@color/st_surface" app:cardCornerRadius="14dp" app:cardElevation="0dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎾 Livre" android:textColor="@color/st_text_secondary" android:textSize="12sp" />
+                        <TextView android:id="@+id/txtSessoesLivres" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0" android:textColor="@color/st_text_primary" android:textSize="22sp" android:textStyle="bold" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="23dp" android:layout_marginBottom="10dp" android:text="Insights do seu jogo" android:textColor="@color/st_text_primary" android:textSize="18sp" android:textStyle="bold" />
+            <LinearLayout android:id="@+id/containerInsightsStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="17dp" android:layout_marginBottom="10dp" android:text="Atividade nos últimos 7 dias" android:textColor="@color/st_text_primary" android:textSize="18sp" android:textStyle="bold" />
+            <androidx.cardview.widget.CardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="5dp" app:cardBackgroundColor="@color/st_surface" app:cardCornerRadius="16dp" app:cardElevation="0dp">
+                <LinearLayout android:id="@+id/containerSemanaStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="14dp" />
+            </androidx.cardview.widget.CardView>
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="23dp" android:layout_marginBottom="10dp" android:text="Sessões recentes" android:textColor="@color/st_text_primary" android:textSize="18sp" android:textStyle="bold" />
+            <LinearLayout android:id="@+id/containerRecentesStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/bottomNavigationStats"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="@color/st_surface"
+        android:elevation="8dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <LinearLayout android:id="@+id/navTreinosStats" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground" android:gravity="center" android:orientation="vertical">
+            <ImageView android:layout_width="23dp" android:layout_height="23dp" android:contentDescription="Treinos" android:src="@drawable/exerciciosicon" android:tint="@color/st_text_secondary" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Treinos" android:textColor="@color/st_text_secondary" android:textSize="10sp" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/navEstatisticasStats" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground" android:gravity="center" android:orientation="vertical">
+            <ImageView android:layout_width="23dp" android:layout_height="23dp" android:contentDescription="Estatísticas" android:src="@drawable/estatisticaicon" android:tint="@color/st_accent" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Estatísticas" android:textColor="@color/st_accent" android:textSize="10sp" android:textStyle="bold" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/navPerfilStats" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground" android:gravity="center" android:orientation="vertical">
+            <ImageView android:layout_width="23dp" android:layout_height="23dp" android:contentDescription="Perfil" android:src="@drawable/perfilicon" android:tint="@color/st_text_secondary" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="Perfil" android:textColor="@color/st_text_secondary" android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/raliRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/st_background"
+    android:fillViewport="true"
+    android:clipToPadding="false"
+    android:paddingBottom="18dp">
+
+    <LinearLayout
+        android:id="@+id/raliConteudo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="18dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="24dp">
+
+        <TextView
+            android:id="@+id/txtTituloRali"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🏆 Rali na Parede"
+            android:textColor="@color/st_accent"
+            android:textSize="27sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtSubtituloRali"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Transforme cada devolução em combo, alvo e recorde. A raquete identifica o golpe; a webcam confirma o voo e a zona da parede."
+            android:textColor="@color/st_text_secondary"
+            android:textSize="14sp"
+            android:lineSpacingExtra="3dp" />
+
+        <TextView
+            android:id="@+id/txtNivel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Nível 1 · XP 0/100"
+            android:textColor="@color/st_text_secondary"
+            android:textSize="12sp" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/st_surface_alt"
+            android:elevation="0dp"
+            app:cardCornerRadius="18dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="MODO DE JOGO"
+                    android:textColor="@color/st_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <RadioGroup
+                    android:id="@+id/grupoModo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radioRali"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/st_accent"
+                        android:checked="true"
+                        android:text="Rali de Combo"
+                        android:textColor="@color/st_text_primary"
+                        android:textSize="14sp" />
+
+                    <RadioButton
+                        android:id="@+id/radioChefao"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:buttonTint="@color/st_accent"
+                        android:text="Chefão"
+                        android:textColor="@color/st_text_primary"
+                        android:textSize="14sp" />
+                </RadioGroup>
+
+                <CheckBox
+                    android:id="@+id/chkSemCamera"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/st_accent"
+                    android:text="Jogar sem câmera (somente raquete)"
+                    android:textColor="@color/st_text_secondary"
+                    android:textSize="13sp" />
+
+                <CheckBox
+                    android:id="@+id/chkEspelhar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/st_accent"
+                    android:text="Inverter esquerda/direita (câmera de frente)"
+                    android:textColor="@color/st_text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/st_surface_alt"
+            android:elevation="0dp"
+            app:cardCornerRadius="18dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="CONEXÕES"
+                    android:textColor="@color/st_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtRaquete"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="🏸 Raquete: desconectada"
+                    android:textColor="@color/st_text_secondary"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/btnReconectarRaquete"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="4dp"
+                    android:textAllCaps="false"
+                    android:text="Reconectar raquete" />
+
+                <TextView
+                    android:id="@+id/txtEstacao"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="💻 Estação: desconectada"
+                    android:textColor="@color/st_text_secondary"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/edtEndereco"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:autofillHints="url"
+                    android:backgroundTint="@color/st_text_secondary"
+                    android:hint="IP:porta (ex.: 192.168.0.10:8765)"
+                    android:inputType="textUri"
+                    android:maxLines="1"
+                    android:padding="12dp"
+                    android:textColor="@color/st_text_primary"
+                    android:textColorHint="@color/st_text_secondary"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/edtToken"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:autofillHints="password"
+                    android:backgroundTint="@color/st_text_secondary"
+                    android:hint="Token exibido no computador"
+                    android:inputType="textPassword"
+                    android:maxLines="1"
+                    android:padding="12dp"
+                    android:textColor="@color/st_text_primary"
+                    android:textColorHint="@color/st_text_secondary"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/btnConectarEstacao"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
+                    android:textAllCaps="false"
+                    android:text="Conectar ao computador" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Celular e computador devem estar na mesma rede Wi-Fi. O vídeo permanece no computador; o app recebe apenas eventos e métricas."
+                    android:textColor="@color/st_text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <Button
+            android:id="@+id/btnIniciar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="4dp"
+            android:textAllCaps="false"
+            android:enabled="false"
+            android:text="Iniciar rali"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/txtPontos"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0 pts"
+                android:textColor="@color/st_text_primary"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtTempo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="03:00"
+                android:textColor="@color/st_text_secondary"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtCombo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="COMBO 0  ×1.0"
+            android:textColor="@color/st_warning"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtBoss"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/st_danger"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/barraBoss"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="14dp"
+            android:layout_marginTop="4dp"
+            android:max="1000"
+            android:progress="1000"
+            android:progressTint="@color/st_danger"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/txtAlvo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="🎯 Conecte a estação para habilitar os alvos."
+            android:textColor="@color/st_accent"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:cardBackgroundColor="@color/st_accent_container"
+            android:elevation="0dp"
+            app:cardCornerRadius="16dp">
+
+            <TextView
+                android:id="@+id/txtMensagem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="3"
+                android:padding="16dp"
+                android:text="Conecte a raquete e a estação, escolha o modo e toque em Iniciar."
+                android:textColor="@color/st_text_secondary"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="ÚLTIMOS GOLPES"
+            android:textColor="@color/st_text_primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtHistorico"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="monospace"
+            android:textColor="@color/st_text_secondary"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btnHistoricoRali"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:textAllCaps="false"
+            android:text="Ver histórico de sessões" />
+    </LinearLayout>
+</ScrollView>
