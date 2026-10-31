@@ -92,6 +92,7 @@ public final class SyncManager {
         json.put("atualizadoEm", d.atualizadoEm);
         json.put("velocidadeAlvoKmh", d.velocidadeAlvoKmh);
         json.put("bolasAlvo", d.bolasAlvo);
+        json.put("usaCamera", d.usaCamera);
         json.put("excluido", d.excluido);
         return json;
     }
@@ -143,7 +144,8 @@ public final class SyncManager {
                         json.optLong("criadoEm", System.currentTimeMillis()),
                         atualizadoServidor,
                         (float) json.optDouble("velocidadeAlvoKmh", 0),
-                        json.optInt("bolasAlvo", 0)
+                        json.optInt("bolasAlvo", 0),
+                        json.optBoolean("usaCamera", false)
                 );
                 remoto.excluido = json.optBoolean("excluido", false);
                 db.desafioDAO().salvar(remoto);

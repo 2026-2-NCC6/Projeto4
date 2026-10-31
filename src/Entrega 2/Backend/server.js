@@ -184,6 +184,7 @@ function challengeFromRow(row) {
     atualizadoEm: Number(row.atualizado_em_ms || 0),
     velocidadeAlvoKmh: Number(row.velocidade_alvo_kmh || 0),
     bolasAlvo: Number(row.bolas_alvo || 0),
+    usaCamera: Boolean(row.usa_camera),
     excluido: Boolean(row.excluido)
   };
 }
@@ -214,7 +215,7 @@ async function getSnapshot(userId) {
   const [challengeRows] = await pool.execute(
     `SELECT id, nome, descricao, duracao_minutos, dificuldade, categoria,
             sequencia_golpes, criado_em_ms, atualizado_em_ms,
-            velocidade_alvo_kmh, bolas_alvo, excluido
+            velocidade_alvo_kmh, bolas_alvo, usa_camera, excluido
        FROM desafio_personalizado WHERE usuario_id = ?
        ORDER BY atualizado_em_ms ASC, id ASC`, [userId]);
   const [historyRows] = await pool.execute(
@@ -339,8 +340,8 @@ app.post('/api/sync', requireAuth, asyncRoute(async (req, res) => {
       await connection.execute(
         `INSERT INTO desafio_personalizado
           (id, usuario_id, nome, descricao, duracao_minutos, dificuldade, categoria,
-           sequencia_golpes, criado_em_ms, atualizado_em_ms, velocidade_alvo_kmh, bolas_alvo, excluido)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           sequencia_golpes, criado_em_ms, atualizado_em_ms, velocidade_alvo_kmh, bolas_alvo, usa_camera, excluido)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
           nome = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(nome), nome),
           descricao = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(descricao), descricao),
@@ -351,12 +352,13 @@ app.post('/api/sync', requireAuth, asyncRoute(async (req, res) => {
           criado_em_ms = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(criado_em_ms), criado_em_ms),
           velocidade_alvo_kmh = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(velocidade_alvo_kmh), velocidade_alvo_kmh),
           bolas_alvo = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(bolas_alvo), bolas_alvo),
+          usa_camera = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(usa_camera), usa_camera),
           excluido = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(excluido), excluido),
           atualizado_em_ms = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(atualizado_em_ms), atualizado_em_ms)`,
         [id, req.auth.userId, nome, asString(item.descricao, 4000), asInt(item.duracaoMinutos, 1, 1, 1440),
           asString(item.dificuldade, 40, 'Iniciante'), asString(item.categoria, 60, 'PERSONALIZADO'),
           asString(item.sequenciaGolpes, 1000), criadoEm, atualizadoEm,
-          asFloat(item.velocidadeAlvoKmh), asInt(item.bolasAlvo, 0, 0, 100000), excluido]);
+          asFloat(item.velocidadeAlvoKmh), asInt(item.bolasAlvo, 0, 0, 100000), item.usaCamera ? 1 : 0, excluido]);
     }
 
     for (const item of history) {

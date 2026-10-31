@@ -22,6 +22,7 @@ import androidx.core.app.ActivityCompat;
 
 
 import com.example.smarttennisapp.backend.SyncManager;
+import com.example.smarttennisapp.VisaoComputacionalClient;
 import com.example.smarttennisapp.database.DatabaseProvider;
 import com.example.smarttennisapp.database.HistoricoTreinoEntity;
 import com.example.smarttennisapp.database.TreinoDAO;
@@ -37,6 +38,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONObject;
@@ -86,6 +88,9 @@ public class Treino extends BaseActivity {
     private TextView txtDescricao;
     private TextView txtDuracao;
     private TextView txtDificuldade;
+    private View cardStatusCamera;
+    private TextView txtEstadoCamera;
+    private TextView txtProgressoCamera;
 
     private LinearLayout containerSequenciaGolpes;
 
@@ -128,6 +133,12 @@ public class Treino extends BaseActivity {
     private String treinoOrigem = "Offline";
     private int treinoDuracaoMinutos = 5;
     private String treinoSequenciaConfigurada = "";
+    private boolean treinoUsaCamera = false;
+    private boolean cameraConectada = false;
+    private VisaoComputacionalClient cameraClient;
+    private String cameraSessionId;
+    private int impactosCamera = 0;
+    private final int[] impactosPorQuadrante = new int[6];
 
 
     private final ArrayList<String> sequenciaGolpes = new ArrayList<>();
@@ -190,6 +201,7 @@ public class Treino extends BaseActivity {
         configurarBotoes();
 
         prepararTela();
+        if (treinoUsaCamera) configurarCameraTreino();
         carregarXPdaCarreira();
         carregarMelhorResultado();
 
@@ -211,6 +223,9 @@ public class Treino extends BaseActivity {
         txtDescricao = findViewById(R.id.txtDescricaoTreino);
         txtDuracao = findViewById(R.id.txtDuracaoTreino);
         txtDificuldade = findViewById(R.id.txtDificuldadeTreino);
+        cardStatusCamera = findViewById(R.id.cardStatusCamera);
+        txtEstadoCamera = findViewById(R.id.txtEstadoCameraTreino);
+        txtProgressoCamera = findViewById(R.id.txtProgressoCameraTreino);
 
         txtInstrucoesGolpes =
                 findViewById(R.id.txtInstrucoesGolpes);
@@ -331,6 +346,7 @@ public class Treino extends BaseActivity {
                 intent.getIntExtra("treino_duracao", 5));
         treinoSequenciaConfigurada = valorString(
                 intent.getStringExtra("treino_sequencia"), "");
+        treinoUsaCamera = intent.getBooleanExtra("treino_usar_camera", false);
 
         criarSequenciaPadrao();
     }
@@ -421,6 +437,7 @@ public class Treino extends BaseActivity {
 
         cardSessaoAtual.setVisibility(View.GONE);
         cardResultadoFinal.setVisibility(View.GONE);
+        if (cardStatusCamera != null) cardStatusCamera.setVisibility(treinoUsaCamera ? View.VISIBLE : View.GONE);
 
         btnEncerrar.setVisibility(View.GONE);
 
@@ -905,6 +922,147 @@ public class Treino extends BaseActivity {
     }
 
     // ============================================================
+    // VISÃO COMPUTACIONAL (OPCIONAL)
+    // ============================================================
+
+    private void configurarCameraTreino() {
+        cameraClient = new VisaoComputacionalClient();
+        txtEstadoCamera.setText("Procurando automaticamente o servidor Python na rede local…");
+        cameraClient.discoverAndConnect(getApplicationContext(), new VisaoComputacionalClient.Listener() {
+            @Override
+            public void onStatus(boolean conectado, JSONObject status, String mensagem) {
+                if (isFinishing() || isDestroyed()) return;
+                cameraConectada = conectado && cameraClient != null && cameraClient.isCameraActive();
+                txtEstadoCamera.setText(cameraConectada
+                        ? "✓ " + mensagem + " · pronto para iniciar"
+                        : mensagem + (conectado ? " · aguarde a webcam" : ""));
+                txtEstadoCamera.setTextColor(cameraConectada
+                        ? android.graphics.Color.rgb(61, 220, 132)
+                        : android.graphics.Color.rgb(255, 193, 7));
+            }
+
+            @Override
+            public void onBallFlight(JSONObject evento) {
+                if (!treinoAtivo || evento == null || !evento.optBoolean("wall_hit", false)) return;
+                registrarImpactoCamera(evento);
+            }
+        });
+    }
+
+    private String obterModoCamera() {
+        String categoria = treinoCategoria == null ? "" : treinoCategoria.toUpperCase(Locale.ROOT);
+        if (categoria.contains("PRECIS") || categoria.contains("CONTROLE")) return "PRECISAO";
+        if (categoria.contains("VARREDURA")) return "QUADRANTES";
+        if (categoria.contains("RALI") || categoria.contains("COMBO") || categoria.contains("CONSIST")) return "RALI";
+        if (categoria.contains("SAQUE")) return "SAQUE";
+        return "IMPACTOS";
+    }
+
+    private int metaCamera() {
+        switch (obterModoCamera()) {
+            case "PRECISAO": return 3;
+            case "RALI": return 8;
+            case "QUADRANTES": return 4;
+            case "SAQUE": return 5;
+            default: return Math.max(5, sequenciaGolpes.size());
+        }
+    }
+
+    private void registrarImpactoCamera(JSONObject evento) {
+        impactosCamera++;
+        JSONObject impacto = evento.optJSONObject("impact");
+        int quadrante = impacto == null ? 0 : impacto.optInt("quadrant", 0);
+        if (quadrante >= 1 && quadrante <= impactosPorQuadrante.length) {
+            impactosPorQuadrante[quadrante - 1]++;
+        }
+        atualizarProgressoCamera();
+        // Quando a sequência ESP32 já terminou, a câmera fecha a missão assim que
+        // a meta complementar selecionada for alcançada.
+        verificarConclusaoObjetivos();
+    }
+
+    private int quadrantesVisitados() {
+        int total = 0;
+        for (int quantidade : impactosPorQuadrante) if (quantidade > 0) total++;
+        return total;
+    }
+
+    private int impactosCentrais() {
+        // Grade 3x2: Q2 e Q5 são as regiões centrais da parede.
+        return impactosPorQuadrante[1] + impactosPorQuadrante[4];
+    }
+
+    private boolean objetivoCameraConcluido() {
+        if (!treinoUsaCamera) return false;
+        switch (obterModoCamera()) {
+            case "PRECISAO": return impactosCentrais() >= metaCamera();
+            case "QUADRANTES": return quadrantesVisitados() >= metaCamera();
+            default: return impactosCamera >= metaCamera();
+        }
+    }
+
+    private String descricaoObjetivoCamera() {
+        switch (obterModoCamera()) {
+            case "PRECISAO": return "impactos nas zonas centrais";
+            case "QUADRANTES": return "quadrantes diferentes visitados";
+            case "RALI": return "impactos válidos na parede";
+            case "SAQUE": return "impactos confirmados dos saques";
+            default: return "impactos confirmados";
+        }
+    }
+
+    private void atualizarProgressoCamera() {
+        if (txtProgressoCamera == null) return;
+        String progresso;
+        if ("PRECISAO".equals(obterModoCamera())) {
+            progresso = impactosCentrais() + "/" + metaCamera() + " impactos nas zonas centrais · " + impactosCamera + " no total";
+        } else if ("QUADRANTES".equals(obterModoCamera())) {
+            progresso = quadrantesVisitados() + "/" + metaCamera() + " quadrantes visitados · " + impactosCamera + " impactos";
+        } else {
+            progresso = impactosCamera + "/" + metaCamera() + " " + descricaoObjetivoCamera();
+        }
+        txtProgressoCamera.setText(progresso);
+    }
+
+    private void iniciarSessaoCameraEContinuar() {
+        if (!treinoUsaCamera) {
+            iniciarTreinoAgora();
+            return;
+        }
+        if (cameraClient == null || !cameraConectada) {
+            contagemInicioAtiva = false;
+            btnComecar.setEnabled(bluetoothConectado);
+            Toast.makeText(this, "A webcam/servidor Python ainda não está pronto. Toque em começar novamente para buscar a estação.", Toast.LENGTH_LONG).show();
+            if (cameraClient == null) configurarCameraTreino();
+            else {
+                cameraClient.close();
+                configurarCameraTreino();
+            }
+            return;
+        }
+        resetarMetricasCamera();
+        cameraSessionId = UUID.randomUUID().toString();
+        btnComecar.setEnabled(false);
+        cameraClient.startSession(cameraSessionId, treinoId, 0f, metaCamera(), obterModoCamera(), (ok, resposta, mensagem) -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!ok) {
+                contagemInicioAtiva = false;
+                btnComecar.setEnabled(bluetoothConectado);
+                Toast.makeText(this, mensagem, Toast.LENGTH_LONG).show();
+                return;
+            }
+            iniciarTreinoAgora();
+            txtEstadoCamera.setText("✓ Câmera em sessão · " + descricaoObjetivoCamera());
+        });
+    }
+
+    private void resetarMetricasCamera() {
+        impactosCamera = 0;
+        for (int i = 0; i < impactosPorQuadrante.length; i++) impactosPorQuadrante[i] = 0;
+        atualizarProgressoCamera();
+    }
+
+    // ============================================================
     // INICIAR TREINO
     // ============================================================
 
@@ -912,6 +1070,15 @@ public class Treino extends BaseActivity {
         if (treinoAtivo || contagemInicioAtiva) return;
         if (!bluetoothConectado) {
             Toast.makeText(this, "Conecte a raquete antes de iniciar.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (treinoUsaCamera && !cameraConectada) {
+            Toast.makeText(this, "A câmera foi selecionada para este desafio. Aguarde o servidor Python e a webcam ficarem prontos.", Toast.LENGTH_LONG).show();
+            if (cameraClient == null) configurarCameraTreino();
+            else {
+                cameraClient.close();
+                configurarCameraTreino();
+            }
             return;
         }
         if (sequenciaGolpes.isEmpty()) {
@@ -928,7 +1095,7 @@ public class Treino extends BaseActivity {
                 Toast.makeText(this, "A conexão com a raquete foi perdida. Conecte novamente para iniciar.", Toast.LENGTH_LONG).show();
                 return;
             }
-            iniciarTreinoAgora();
+            iniciarSessaoCameraEContinuar();
         });
     }
 
@@ -956,6 +1123,7 @@ public class Treino extends BaseActivity {
         backhands = 0;
         golpesRecebidos = 0;
         registroGolpes.limpar();
+        if (!treinoUsaCamera) resetarMetricasCamera();
         xpSessao = 0;
         indiceGolpeAtual = 0;
         tempoDecorrido = 0;
@@ -974,9 +1142,12 @@ public class Treino extends BaseActivity {
     }
 
     private void verificarConclusaoObjetivos() {
-        if (treinoAtivo && indiceGolpeAtual >= sequenciaGolpes.size()) {
+        if (!treinoAtivo || indiceGolpeAtual < sequenciaGolpes.size()) return;
+        if (!treinoUsaCamera || objetivoCameraConcluido()) {
             finalizarTreino(true);
+            return;
         }
+        txtGolpeEsperado.setText("Sequência concluída · " + descricaoObjetivoCamera());
     }
 
     // ============================================================
@@ -1160,6 +1331,7 @@ public class Treino extends BaseActivity {
                         - inicioTreino;
 
         enviarComando("q");
+        if (treinoUsaCamera && cameraClient != null) cameraClient.stopSession();
 
         mainHandler.removeCallbacks(
                 cronometroRunnable
@@ -1178,7 +1350,8 @@ public class Treino extends BaseActivity {
         boolean perfeito = concluidoPorObjetivo && golpesCorretos == totalGolpes && golpesRecebidos == totalGolpes;
         int bonusConclusao = concluidoPorObjetivo ? 100 : 0;
         int bonusPerfeito = perfeito ? 150 : 0;
-        pontuacao += bonusConclusao + bonusPerfeito;
+        int bonusCamera = treinoUsaCamera && concluidoPorObjetivo && objetivoCameraConcluido() ? 100 : 0;
+        pontuacao += bonusConclusao + bonusPerfeito + bonusCamera;
         xpSessao = Math.max(0, pontuacao / 10) + (perfeito ? 25 : (concluidoPorObjetivo ? 10 : 0));
         registrarXPdaSessao();
         txtResultadoPontuacao.setText(String.valueOf(pontuacao));
@@ -1189,6 +1362,8 @@ public class Treino extends BaseActivity {
                 "\nSaques: " + saques + "  ·  Forehands: " + forehands + "  ·  Backhands: " + backhands +
                 "\nClasses detectadas: " + registroGolpes.resumoPorClasse() +
                 "\nMelhor combo: x" + melhorCombo +
+                (treinoUsaCamera ? "\nCâmera: " + impactosCamera + " impactos · " + quadrantesVisitados() + "/6 quadrantes" +
+                        "\nMeta de câmera: " + (objetivoCameraConcluido() ? "concluída (+" + bonusCamera + " pontos)" : "não concluída") : "") +
                 "\nXP desta sessão: +" + xpSessao +
                 "\nXP total: " + xpCarreira + "  ·  Nível " + nivelJogador
         );
@@ -1280,10 +1455,23 @@ public class Treino extends BaseActivity {
                 historico.golpesRecebidos = golpesRecebidos;
                 historico.concluido = sessaoConcluida;
                 historico.metricasGolpesJson = registroGolpes.paraJson("TREINO_GUIADO");
+                historico.bolasDetectadas = treinoUsaCamera ? impactosCamera : 0;
+                historico.bolasAcimaMeta = treinoUsaCamera && objetivoCameraConcluido() ? 1 : 0;
                 try {
                     JSONObject extras = new JSONObject();
                     extras.put("origem", "TREINO_GUIADO");
                     extras.put("metricasGolpes", new JSONObject(historico.metricasGolpesJson));
+                    if (treinoUsaCamera) {
+                        extras.put("cameraAtiva", true);
+                        extras.put("modoCamera", obterModoCamera());
+                        extras.put("impactosDetectados", impactosCamera);
+                        extras.put("metaCamera", metaCamera());
+                        extras.put("metaCameraConcluida", objetivoCameraConcluido());
+                        extras.put("quadrantesVisitados", quadrantesVisitados());
+                        org.json.JSONArray quadrantes = new org.json.JSONArray();
+                        for (int i = 0; i < impactosPorQuadrante.length; i++) quadrantes.put(impactosPorQuadrante[i]);
+                        extras.put("impactosPorQuadrante", quadrantes);
+                    }
                     historico.metricasCameraJson = extras.toString();
                 } catch (Exception ignorada) {
                     historico.metricasCameraJson = "{\"origem\":\"TREINO_GUIADO\"}";
@@ -1450,6 +1638,7 @@ public class Treino extends BaseActivity {
         // Não cancela tarefas pendentes: a gravação do histórico deve terminar mesmo
         // se o usuário sair da tela logo após concluir a sessão.
         executor.shutdown();
+        if (cameraClient != null) cameraClient.close();
 
         super.onDestroy();
     }

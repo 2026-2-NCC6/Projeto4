@@ -8,24 +8,21 @@
 
 ## Enrolados
 
-## Integrantes: <a href="https://www.linkedin.com/in/victorbarq/">Guilherme Barioni</a>, <a href="https://www.linkedin.com/in/victorbarq/">Iury Xavier</a>, <a href="https://www.linkedin.com/in/victorbarq/">Lilian Conde</a>, <a href="https://www.linkedin.com/in/victorbarq/">Marcus Duque</a>, <a href="https://www.linkedin.com/in/victorbarq/">Murilo Vieira</a>
+## Integrantes: <a href="https://github.com/guibarioni"> Guilherme Barioni</a>, <a href=https://github.com/IuryXa>Iury Xavier</a>, <a href="https://github.com/lilianconde">Lilian Conde</a>, <a href="https://github.com/marcusduquee">Marcus Duque</a>, <a href="https://github.com/MuraCap4">Murilo Vieira</a>
 
-## Professores Orientadores: <a href="https://www.linkedin.com/in/victorbarq/">Joao Francisco Trencher Martins</a>, <a href="https://www.linkedin.com/in/victorbarq/">Rodnil da Silva Moreira Lisboa</a>, <a href="https://www.linkedin.com/in/victorbarq/">Victor Bruno Alexander Rosetti de Quiroz</a>, <a href="https://www.linkedin.com/in/victorbarq/">Edson Ricardo Barbero</a>, <a href="https://www.linkedin.com/in/victorbarq/">Katia Milani Lara Bossi</a>
+## Professores Orientadores: <a href="https://www.linkedin.com/in/trencher/">João Francisco Trencher Martins</a>, <a href="https://www.linkedin.com/in/professorrodnil/">Rodnil da Silva Moreira Lisboa</a>, <a href="https://www.linkedin.com/in/victorbarq/">Victor Bruno Alexander Rosetti de Quiroz</a>, <a href="https://www.linkedin.com/in/edsonbarbero/">Edson Ricardo Barbero</a>, <a href="https://www.linkedin.com/in/katia-bossi/">Katia Milani Lara Bossi</a>
 
 ## Descrição
 
 <p align="center">
-<img src="https://pix4free.org/assets/library/2021-01-20/originals/game.jpg" alt="NOME DO JOGO" border="0">
-  Game by <a href="http://www.nyphotographic.com/">Nick Youngson</a> <a rel="license" href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a> <a href="http://pix4free.org/">Pix4free</a>
+<img src="https://pix4free.org/assets/library/2021-01-20/originals/game.jpg" alt="Logo SmartAce" border="0">
+  Logo by <a href="https://github.com/2026-2-NCC6/Projeto4">Enrolados</a> <a rel="license" href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>
 </p>
 
-
-De um a dois parágrafos sobre o que é seu projeto e o que ele faz.
-<br><br>
-Meu projeto ajuda estudantes FECAP a configurarem seus githubs.
-<br><br>
-May the force be with you!
-<br><br>
+O SmartAce propõe uma solução acessível para apoiar o treinamento de tênis por meio de um protótipo
+de raquete com ESP32 e sensores de movimento conectado por Bluetooth a um aplicativo Android. O
+projeto busca reduzir a dependência de equipamentos especializados e facilitar o acompanhamento da
+prática por jogadores, estudantes e treinadores.
 
 ## 🛠 Estrutura de pastas
 
@@ -44,44 +41,22 @@ May the force be with you!
   &emsp;|-->Frontend<br>
 |readme.md<br>
 
-A pasta raiz contem dois arquivos que devem ser alterados:
-
-<b>README.MD</b>: Arquivo que serve como guia e explicação geral sobre seu projeto. O mesmo que você está lendo agora.
-
-Há também 4 pastas que seguem da seguinte forma:
-
-<b>documentos</b>: Toda a documentação estará nesta pasta.
-
-<b>executáveis</b>: Binários e executáveis do projeto devem estar nesta pasta.
-
-<b>imagens</b>: Imagens do sistema
-
-<b>src</b>: Pasta que contém o código fonte.
-
 ## 🛠 Instalação
 
 <b>Android:</b>
 
-Faça o Download do JOGO.apk no seu celular.
+Faça o Download do SmartAce.apk no seu celular.
 Execute o APK e siga as instruções de seu telefone.
 
-```sh
-Coloque código do prompt de comnando se for necessário
-```
+<b>Windows/Linux:</b>
 
-<b>Windows:</b>
+Para o modelo de visão computacional:
 
-Não há instalação! Apenas executável!
-Encontre o JOGO.exe na pasta executáveis e execute-o como qualquer outro programa.
+Para a dashboard:
 
 ```sh
 Coloque código do prompt de comnando se for necessário
 ```
-
-<b>HTML:</b>
-
-Não há instalação!
-Encontre o index.html na pasta executáveis e execute-o como uma página WEB (através de algum browser).
 
 ## 💻 Configuração para Desenvolvimento
 

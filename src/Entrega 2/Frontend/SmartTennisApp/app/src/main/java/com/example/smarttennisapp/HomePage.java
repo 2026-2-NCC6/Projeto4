@@ -71,12 +71,10 @@ public class HomePage extends BaseActivity {
             startActivity(intent);
         });
 
-        CardView jogoParedeCard = findViewById(R.id.cardJogoParede);
-        if (jogoParedeCard != null) {
-            jogoParedeCard.setOnClickListener(view -> {
-                Intent intent = new Intent(this, com.example.smarttennisapp.jogo.JogoActivity.class);
-                startActivity(intent);
-            });
+        CardView rankingGlobalCard = findViewById(R.id.cardRankingGlobal);
+        if (rankingGlobalCard != null) {
+            rankingGlobalCard.setOnClickListener(view ->
+                    startActivity(new Intent(this, RankingActivity.class)));
         }
 
         estatistica.setOnClickListener(view->{

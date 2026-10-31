@@ -109,7 +109,14 @@ public class Cadastro extends BaseActivity {
                         }
                         aviso = "Servidor indisponivel; a conta foi criada somente neste dispositivo por enquanto.";
                     } catch (IOException e) {
-                        aviso = "Sem conexao com o servidor; a conta foi criada somente neste dispositivo por enquanto.";
+                        // O cadastro pode ter sido confirmado pela API mesmo se a resposta
+                        // se perdeu/expirou. Tente autenticar antes de criar uma conta offline.
+                        try {
+                            authRemota = BackendApi.login(this, emailText, senhaText);
+                            aviso = null;
+                        } catch (IOException falhaLoginAposCadastro) {
+                            aviso = "Nao foi possivel confirmar a resposta do servidor. A conta ficou salva neste aparelho; tente novamente quando o backend Azure estiver disponível.";
+                        }
                     }
 
                     Usuario novoUsuario = new Usuario();

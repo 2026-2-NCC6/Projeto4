@@ -100,6 +100,32 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_card_treino_execucao"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchUsarCameraDesafio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Usar sistema de câmeras"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="O aplicativo localizará automaticamente o servidor Python na mesma rede Wi-Fi. Desligado, o desafio funciona somente com a raquete, como antes."
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="22dp"
             android:background="@drawable/bg_card_treino_execucao"
             android:orientation="vertical"

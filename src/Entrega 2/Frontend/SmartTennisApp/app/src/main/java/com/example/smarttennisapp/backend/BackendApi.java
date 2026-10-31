@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /** Cliente HTTP sincrono: chamar somente em uma thread de trabalho, nunca na UI. */
@@ -61,14 +62,36 @@ public final class BackendApi {
         return request(context, "GET", "/api/sync", token, null);
     }
 
+    public static JSONObject obterRankingGlobal(Context context, String token, int limite) throws IOException {
+        int tamanho = Math.max(1, Math.min(100, limite));
+        return request(context, "GET", "/api/rankings/global?limit=" + tamanho, token, null);
+    }
+
+    public static JSONObject obterRankingDesafio(Context context, String token, String desafioId,
+                                                   String nomeDesafio, int limite) throws IOException {
+        if (desafioId == null || desafioId.trim().isEmpty()) {
+            throw new IOException("O desafio selecionado nao possui identificador valido.");
+        }
+        int tamanho = Math.max(1, Math.min(100, limite));
+        String id = URLEncoder.encode(desafioId, StandardCharsets.UTF_8.name()).replace("+", "%20");
+        String nome = URLEncoder.encode(nomeDesafio == null ? "" : nomeDesafio, StandardCharsets.UTF_8.name());
+        return request(context, "GET", "/api/rankings/challenges/" + id + "?nome=" + nome + "&limit=" + tamanho, token, null);
+    }
+
     private static JSONObject request(Context context, String method, String path, String token, JSONObject body) throws IOException {
+        String baseUrl = BackendConfig.obterBaseUrl(context);
+        if (baseUrl == null || baseUrl.trim().isEmpty()) {
+            throw new IOException("URL do backend SmartTennis não definida no código-fonte.");
+        }
         HttpURLConnection connection = null;
         try {
-            URL url = new URL(BackendConfig.obterBaseUrl(context) + path);
+            URL url = new URL(baseUrl + path);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(method);
-            connection.setConnectTimeout(1000);
-            connection.setReadTimeout(1800);
+            // Azure pode acordar uma instância parada e o bcrypt aumenta o tempo de auth.
+            // Limites curtos causavam falso erro depois de o servidor já gravar o cadastro.
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(30000);
             connection.setUseCaches(false);
             connection.setRequestProperty("Accept", "application/json");
             if (token != null && !token.trim().isEmpty()) {

@@ -17,7 +17,6 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -82,7 +81,6 @@ public class JogoActivity extends BaseActivity {
     private RadioGroup grupoModo;
     private RadioButton radioRali, radioChefao;
     private CheckBox chkSemCamera, chkEspelhar;
-    private EditText edtEndereco, edtToken;
     private Button btnIniciar;
 
     private final Runnable ticker = new Runnable() {
@@ -127,11 +125,8 @@ public class JogoActivity extends BaseActivity {
             }
         });
 
-        visao = new VisaoComputacionalClient();
-        SharedPreferences vp = getSharedPreferences("VisionBridgePrefs", MODE_PRIVATE);
-        edtEndereco.setText(vp.getString("address", ""));
-        edtToken.setText(vp.getString("token", ""));
-        if (!edtEndereco.getText().toString().trim().isEmpty() && !edtToken.getText().toString().trim().isEmpty()) {
+        if (!chkSemCamera.isChecked()) {
+            visao = new VisaoComputacionalClient();
             principal.postDelayed(this::conectarEstacao, 250);
         }
         atualizarNivel();
@@ -172,18 +167,14 @@ public class JogoActivity extends BaseActivity {
     }
 
     private void conectarEstacao() {
-        String endereco = edtEndereco.getText().toString().trim();
-        String token = edtToken.getText().toString().trim();
-        if (endereco.isEmpty() || token.isEmpty()) {
-            edtEndereco.setError(endereco.isEmpty() ? "Informe o IP e a porta exibidos no computador." : null);
-            edtToken.setError(token.isEmpty() ? "Informe o token da estação." : null);
-            return;
-        }
-        getSharedPreferences("VisionBridgePrefs", MODE_PRIVATE).edit()
-                .putString("address", endereco).putString("token", token).apply();
-        txtEstacao.setText("💻 Conectando à estação...");
+        if (chkSemCamera.isChecked()) return;
+        if (visao == null) visao = new VisaoComputacionalClient();
+        estacaoOk = false;
+        cameraAtiva = false;
+        txtEstacao.setText("💻 Procurando estação Python na rede local…");
         txtEstacao.setTextColor(COR_SUAVE);
-        visao.connect(endereco, token, new VisaoComputacionalClient.Listener() {
+        atualizarBotao();
+        visao.discoverAndConnect(getApplicationContext(), new VisaoComputacionalClient.Listener() {
             @Override public void onStatus(boolean conectado, JSONObject status, String mensagem) {
                 estacaoOk = conectado;
                 cameraAtiva = conectado && visao.isCameraActive();
@@ -456,7 +447,20 @@ public class JogoActivity extends BaseActivity {
         chkSemCamera = new CheckBox(this);
         chkSemCamera.setText("Jogar sem câmera (só raquete)");
         chkSemCamera.setTextColor(COR_SUAVE);
-        chkSemCamera.setOnCheckedChangeListener((b, marcado) -> { atualizarBotao(); atualizarHud(); });
+        chkSemCamera.setOnCheckedChangeListener((b, marcado) -> {
+            if (marcado) {
+                if (visao != null) visao.close();
+                visao = null;
+                estacaoOk = false;
+                cameraAtiva = false;
+                txtEstacao.setText("💻 Câmera desativada para este jogo.");
+                txtEstacao.setTextColor(COR_SUAVE);
+            } else {
+                conectarEstacao();
+            }
+            atualizarBotao();
+            atualizarHud();
+        });
         raiz.addView(chkSemCamera);
         chkEspelhar = new CheckBox(this);
         chkEspelhar.setText("Inverter esquerda/direita (se a câmera estiver de frente)");
@@ -469,23 +473,11 @@ public class JogoActivity extends BaseActivity {
         btnRaquete.setOnClickListener(v -> pedirPermissaoEConectarRaquete());
         raiz.addView(btnRaquete);
 
-        txtEstacao = texto("💻 Estação: desconectada", 14, COR_SUAVE, false);
+        txtEstacao = texto("💻 Procurando estação Python na rede local…", 14, COR_SUAVE, false);
         raiz.addView(txtEstacao, margem(10, 0));
-        edtEndereco = new EditText(this);
-        edtEndereco.setHint("IP:porta do computador (ex.: 192.168.0.10:8765)");
-        edtEndereco.setTextColor(COR_TEXTO);
-        edtEndereco.setHintTextColor(COR_SUAVE);
-        edtEndereco.setSingleLine(true);
-        raiz.addView(edtEndereco);
-        edtToken = new EditText(this);
-        edtToken.setHint("Token da estação");
-        edtToken.setTextColor(COR_TEXTO);
-        edtToken.setHintTextColor(COR_SUAVE);
-        edtToken.setSingleLine(true);
-        raiz.addView(edtToken);
-        Button btnEstacao = botao("Conectar à estação");
-        btnEstacao.setOnClickListener(v -> conectarEstacao());
-        raiz.addView(btnEstacao);
+        TextView dicaEstacao = texto("A busca é automática. Mantenha o computador e o celular na mesma rede Wi-Fi.",
+                12, COR_SUAVE, false);
+        raiz.addView(dicaEstacao, margem(4, 0));
 
         btnIniciar = botao("Iniciar");
         btnIniciar.setEnabled(false);
@@ -512,7 +504,7 @@ public class JogoActivity extends BaseActivity {
 
         txtAlvo = texto("", 17, COR_VERDE, true);
         raiz.addView(txtAlvo, margem(10, 0));
-        txtMensagem = texto("Conecte a raquete e a estação, escolha o modo e toque em Iniciar.", 20, COR_SUAVE, true);
+        txtMensagem = texto("Conecte a raquete, aguarde a estação automática se usar a câmera e toque em Iniciar.", 20, COR_SUAVE, true);
         txtMensagem.setMinLines(4);
         raiz.addView(txtMensagem, margem(10, 0));
         txtHistorico = texto("", 14, COR_SUAVE, false);

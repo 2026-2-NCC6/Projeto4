@@ -13,6 +13,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.widget.SwitchCompat;
 
 
 import com.example.smarttennisapp.backend.SyncManager;
@@ -59,6 +60,7 @@ public class CriarDesafioActivity extends BaseActivity {
     private Button btnAdicionar;
     private Button btnRemover;
     private Button btnSalvar;
+    private SwitchCompat switchUsarCamera;
 
     private final ArrayList<String> sequencia = new ArrayList<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -108,6 +110,7 @@ public class CriarDesafioActivity extends BaseActivity {
         btnAdicionar = findViewById(R.id.btnAdicionarEtapaDesafio);
         btnRemover = findViewById(R.id.btnRemoverEtapaDesafio);
         btnSalvar = findViewById(R.id.btnSalvarDesafio);
+        switchUsarCamera = findViewById(R.id.switchUsarCameraDesafio);
     }
 
     private void configurarSpinners() {
@@ -251,6 +254,7 @@ public class CriarDesafioActivity extends BaseActivity {
                 edtDescricao.setText(desafio.descricao == null ? "" : desafio.descricao);
                 edtDuracao.setText(String.valueOf(desafio.duracaoMinutos));
                 criadoEm = desafio.criadoEm;
+                switchUsarCamera.setChecked(desafio.usaCamera);
                 if (desafio.dificuldade != null) {
                     for (int i = 0; i < DIFICULDADES.length; i++) {
                         if (DIFICULDADES[i].equalsIgnoreCase(desafio.dificuldade)) {
@@ -329,7 +333,8 @@ public class CriarDesafioActivity extends BaseActivity {
                 criado,
                 agora,
                 0f,
-                0
+                0,
+                switchUsarCamera.isChecked()
         );
 
         btnSalvar.setEnabled(false);

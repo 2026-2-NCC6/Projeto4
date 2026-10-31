@@ -34,23 +34,19 @@ public class DesafioEntity {
     @ColumnInfo(defaultValue = "0")
     public int bolasAlvo;
 
+    /** Integração opcional com a estação local de visão computacional. */
+    @ColumnInfo(defaultValue = "0")
+    public boolean usaCamera = false;
+
     /** Exclusao logica para propagar remocoes aos outros celulares na sincronizacao. */
     @ColumnInfo(defaultValue = "0")
     public boolean excluido = false;
 
     public DesafioEntity(
-            @NonNull String id,
-            int usuarioId,
-            String nome,
-            String descricao,
-            int duracaoMinutos,
-            String dificuldade,
-            String categoria,
-            String sequenciaGolpes,
-            long criadoEm,
-            long atualizadoEm,
-            float velocidadeAlvoKmh,
-            int bolasAlvo
+            @NonNull String id, int usuarioId, String nome, String descricao,
+            int duracaoMinutos, String dificuldade, String categoria,
+            String sequenciaGolpes, long criadoEm, long atualizadoEm,
+            float velocidadeAlvoKmh, int bolasAlvo, boolean usaCamera
     ) {
         this.id = id;
         this.usuarioId = usuarioId;
@@ -64,5 +60,6 @@ public class DesafioEntity {
         this.atualizadoEm = atualizadoEm;
         this.velocidadeAlvoKmh = velocidadeAlvoKmh;
         this.bolasAlvo = bolasAlvo;
+        this.usaCamera = usaCamera;
     }
 }

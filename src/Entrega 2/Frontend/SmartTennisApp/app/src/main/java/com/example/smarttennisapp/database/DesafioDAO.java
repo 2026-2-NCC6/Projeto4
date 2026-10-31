@@ -27,6 +27,9 @@ public interface DesafioDAO {
     @Query("SELECT * FROM desafios_personalizados WHERE usuarioId = :usuarioId AND excluido = 0 ORDER BY atualizadoEm DESC, nome COLLATE NOCASE ASC")
     List<DesafioEntity> listarPorUsuario(int usuarioId);
 
+    @Query("UPDATE desafios_personalizados SET usaCamera = :usaCamera, atualizadoEm = MAX(atualizadoEm + 1, :atualizadoEm) WHERE id = :id AND usuarioId = :usuarioId AND excluido = 0")
+    int atualizarUsoCamera(String id, int usuarioId, boolean usaCamera, long atualizadoEm);
+
     @Query("UPDATE desafios_personalizados SET excluido = 1, atualizadoEm = MAX(atualizadoEm + 1, CAST(strftime('%s','now') AS INTEGER) * 1000) WHERE id = :id AND usuarioId = :usuarioId AND excluido = 0")
     int excluir(String id, int usuarioId);
 }

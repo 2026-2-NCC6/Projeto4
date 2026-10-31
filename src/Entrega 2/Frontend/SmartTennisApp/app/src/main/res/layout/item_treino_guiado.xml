@@ -116,6 +116,16 @@
 
     </LinearLayout>
 
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/switchCameraTreino"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:minHeight="44dp"
+        android:text="Usar câmeras · impactos"
+        android:textColor="@color/text_primary"
+        android:textSize="13sp" />
+
     <TextView
         android:id="@+id/txtEtapasTreino"
         android:layout_width="match_parent"
@@ -128,18 +138,39 @@
         android:textStyle="bold" />
 
     <!-- Ação -->
-    <Button
-        android:id="@+id/btnIniciarTreinoGuiado"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="18dp"
-        android:backgroundTint="@color/accent"
-        android:text="Começar treino"
-        android:textAllCaps="false"
-        android:textColor="@color/accent_text"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:cornerRadius="12dp" />
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnIniciarTreinoGuiado"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1.25"
+            android:layout_marginEnd="6dp"
+            android:backgroundTint="@color/accent"
+            android:text="Começar treino"
+            android:textAllCaps="false"
+            android:textColor="@color/accent_text"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:cornerRadius="12dp" />
+
+        <Button
+            android:id="@+id/btnRankingTreinoGuiado"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:backgroundTint="@color/surface_secondary"
+            android:text="🏆 Ranking"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            app:cornerRadius="12dp" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/acoesDesafioPersonalizado"

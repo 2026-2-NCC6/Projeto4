@@ -97,7 +97,7 @@ public class LoginActivity extends BaseActivity {
                         if (erroServidor != null && (erroServidor.contains("HTTP 401") || erroServidor.contains("incorretos"))) {
                             mensagem = "E-mail ou senha incorretos.";
                         } else if (erroServidor != null && erroServidor.startsWith("Servidor SmartTennis indisponivel")) {
-                            mensagem = "Sem conexao com o servidor e sem uma conta local valida. Conecte-se para entrar pela primeira vez.";
+                            mensagem = "Sem conexao com o servidor e sem uma conta local valida. Verifique a conexão com a internet.";
                         } else {
                             mensagem = "Usuário não encontrado ou senha incorreta.";
                         }
@@ -133,7 +133,13 @@ public class LoginActivity extends BaseActivity {
                         // Sem internet: login local continua funcionando normalmente.
                     }
                     if (vinculada) SyncManager.sincronizarEmSegundoPlano(this, idLocal);
-                    entrarNoApp(vinculada ? null : "Login local. Seus dados continuam disponiveis offline; a sincronizacao sera ativada quando a conta remota puder ser validada.");
+                    String avisoOffline;
+                    if (vinculada) {
+                        avisoOffline = null;
+                    } else {
+                        avisoOffline = "Login local. Seus dados continuam disponiveis offline; a sincronizacao sera ativada quando a conta remota puder ser validada.";
+                    }
+                    entrarNoApp(avisoOffline);
                 } catch (Exception e) {
                     mostrarErroLogin("Nao foi possivel concluir o login: " + (e.getMessage() == null ? "erro inesperado" : e.getMessage()));
                 }

@@ -14,6 +14,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.widget.SwitchCompat;
 
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
@@ -131,6 +132,8 @@ public class TreinoGuiadoLista extends BaseActivity {
         private final String origem;
         private final String sequenciaGolpes;
         private final boolean personalizado;
+        private boolean usarCamera;
+        private final boolean cameraRecomendada;
 
         public Treino(
                 String id,
@@ -141,7 +144,7 @@ public class TreinoGuiadoLista extends BaseActivity {
                 String categoria,
                 String origem
         ) {
-            this(id, nome, descricao, duracaoMinutos, dificuldade, categoria, origem, "", false);
+            this(id, nome, descricao, duracaoMinutos, dificuldade, categoria, origem, "", false, false, false);
         }
 
         public Treino(
@@ -155,6 +158,16 @@ public class TreinoGuiadoLista extends BaseActivity {
                 String sequenciaGolpes,
                 boolean personalizado
         ) {
+            this(id, nome, descricao, duracaoMinutos, dificuldade, categoria, origem,
+                    sequenciaGolpes, personalizado, false, false);
+        }
+
+        public Treino(
+                String id, String nome, String descricao, int duracaoMinutos,
+                String dificuldade, String categoria, String origem,
+                String sequenciaGolpes, boolean personalizado,
+                boolean usarCamera, boolean cameraRecomendada
+        ) {
             this.id = id;
             this.nome = nome;
             this.descricao = descricao;
@@ -164,6 +177,8 @@ public class TreinoGuiadoLista extends BaseActivity {
             this.origem = origem;
             this.sequenciaGolpes = sequenciaGolpes == null ? "" : sequenciaGolpes;
             this.personalizado = personalizado;
+            this.usarCamera = usarCamera;
+            this.cameraRecomendada = cameraRecomendada;
         }
 
         public String getId() {
@@ -201,6 +216,10 @@ public class TreinoGuiadoLista extends BaseActivity {
         public boolean isPersonalizado() {
             return personalizado;
         }
+
+        public boolean isUsarCamera() { return usarCamera; }
+        public void setUsarCamera(boolean valor) { usarCamera = valor; }
+        public boolean isCameraRecomendada() { return cameraRecomendada; }
 
         public int getQuantidadeEtapas() {
             if (sequenciaGolpes.isEmpty()) return 0;
@@ -252,6 +271,18 @@ public class TreinoGuiadoLista extends BaseActivity {
         adicionarTreinoCatalogo("offline_012", "Controle de Altura",
                 "Alterne lob e amortida para praticar trajetórias opostas e controle do toque.",
                 10, "Intermediário", "CONTROLE", "LOB,AMO,LOB,AMO,LOB,AMO");
+        adicionarTreinoCatalogo("offline_013", "Precisão na Parede",
+                "Combine a sequência de golpes com a leitura dos impactos nos quadrantes centrais da parede.",
+                12, "Intermediário", "PRECISÃO", "FOREHAND,BACKHAND,FOREHAND,BACKHAND,FOREHAND,BACKHAND", true);
+        adicionarTreinoCatalogo("offline_014", "Rali Monitorado",
+                "Mantenha a sequência da raquete e registre pelo menos oito impactos válidos na parede.",
+                15, "Intermediário", "RALI", "FOREHAND,BACKHAND,FOREHAND,BACKHAND,FOREHAND,BACKHAND,FOREHAND,BACKHAND", true);
+        adicionarTreinoCatalogo("offline_015", "Explorador de Quadrantes",
+                "Varie a direção dos golpes para alcançar quatro regiões diferentes da parede, acompanhadas pela câmera.",
+                15, "Avançado", "VARREDURA", "SAQUE,FOREHAND,BACKHAND,FOREHAND,BACKHAND,SAQUE,FOREHAND,BACKHAND", true);
+        adicionarTreinoCatalogo("offline_016", "Saque em Sequência",
+                "Execute os saques indicados e use a câmera para confirmar cinco impactos na parede.",
+                12, "Intermediário", "SAQUE", "SAQUE,SAQUE,SAQUE,SAQUE,SAQUE", true);
 
         if (usuarioId <= 0) {
             atualizarLista();
@@ -283,10 +314,13 @@ public class TreinoGuiadoLista extends BaseActivity {
                             desafio.descricao == null ? "" : desafio.descricao,
                             Math.max(1, desafio.duracaoMinutos),
                             desafio.dificuldade == null ? "Iniciante" : desafio.dificuldade,
-                            "MEU DESAFIO",
+                            desafio.categoria == null || desafio.categoria.trim().isEmpty()
+                                    ? "FUNDAMENTOS" : desafio.categoria,
                             "PERSONALIZADO",
                             desafio.sequenciaGolpes,
-                            true
+                            true,
+                            desafio.usaCamera,
+                            false
                     ));
                 }
                 progressoTreinos.setVisibility(View.GONE);
@@ -298,8 +332,16 @@ public class TreinoGuiadoLista extends BaseActivity {
     private void adicionarTreinoCatalogo(String id, String nome, String descricao,
                                          int duracao, String dificuldade, String categoria,
                                          String sequencia) {
+        adicionarTreinoCatalogo(id, nome, descricao, duracao, dificuldade, categoria, sequencia, false);
+    }
+
+    private void adicionarTreinoCatalogo(String id, String nome, String descricao,
+                                         int duracao, String dificuldade, String categoria,
+                                         String sequencia, boolean cameraRecomendada) {
+        boolean usarCamera = getSharedPreferences("DesafiosCameraPrefs", MODE_PRIVATE)
+                .getBoolean("camera_" + id, cameraRecomendada);
         todosTreinos.add(new Treino(id, nome, descricao, duracao, dificuldade,
-                categoria, "OFFLINE", sequencia, false));
+                categoria, "OFFLINE", sequencia, false, usarCamera, cameraRecomendada));
     }
 
     private void removerDesafiosPersonalizadosDaLista() {
@@ -457,6 +499,15 @@ public class TreinoGuiadoLista extends BaseActivity {
         }
     }
 
+    private String nomeModoCamera(String categoria) {
+        String c = categoria == null ? "" : categoria.toUpperCase(Locale.ROOT);
+        if (c.contains("PRECIS") || c.contains("CONTROLE")) return "precisão";
+        if (c.contains("VARREDURA")) return "quadrantes";
+        if (c.contains("RALI") || c.contains("COMBO") || c.contains("CONSIST")) return "rali";
+        if (c.contains("SAQUE")) return "saques";
+        return "impactos";
+    }
+
     // --------------------------------------------------
     // ADAPTER DO RECYCLERVIEW
     // --------------------------------------------------
@@ -503,6 +554,30 @@ public class TreinoGuiadoLista extends BaseActivity {
             holder.txtEtapas.setText("🎾 " + treino.getQuantidadeEtapas() + " etapas · IoT Bluetooth");
             holder.txtCategoria.setText(treino.getCategoria());
             holder.txtOrigem.setText(treino.isPersonalizado() ? "MEU DESAFIO" : treino.getOrigem());
+            holder.switchCamera.setOnCheckedChangeListener(null);
+            holder.switchCamera.setChecked(treino.isUsarCamera());
+            holder.switchCamera.setText("Usar câmeras · " + nomeModoCamera(treino.getCategoria()));
+            holder.switchCamera.setOnCheckedChangeListener((button, marcado) -> {
+                treino.setUsarCamera(marcado);
+                if (treino.isPersonalizado()) {
+                    long agora = System.currentTimeMillis();
+                    executor.execute(() -> {
+                        try {
+                            db.desafioDAO().atualizarUsoCamera(treino.getId(), usuarioId, marcado, agora);
+                            SyncManager.sincronizarEmSegundoPlano(TreinoGuiadoLista.this, usuarioId);                        } catch (Exception erro) {
+                            runOnUiThread(() -> {
+                                treino.setUsarCamera(!marcado);
+                                adapter.notifyDataSetChanged();
+                                Toast.makeText(TreinoGuiadoLista.this,
+                                        "Não foi possível salvar a opção de câmera.", Toast.LENGTH_LONG).show();
+                            });
+                        }
+                    });
+                } else {
+                    getSharedPreferences("DesafiosCameraPrefs", MODE_PRIVATE).edit()
+                            .putBoolean("camera_" + treino.getId(), marcado).apply();
+                }
+            });
 
             holder.acoesPersonalizadas.setVisibility(treino.isPersonalizado() ? View.VISIBLE : View.GONE);
             holder.btnEditar.setOnClickListener(v -> editarDesafio(treino));
@@ -532,11 +607,10 @@ public class TreinoGuiadoLista extends BaseActivity {
 
             holder.txtDificuldade.setTextColor(corDificuldade);
 
-            holder.btnIniciar.setOnClickListener(v -> {
-                abrirTreino(treino);
-            });
+            holder.btnIniciar.setOnClickListener(v -> abrirTreino(treino));
+            holder.btnRanking.setOnClickListener(v -> abrirRankingDesafio(treino));
 
-            // Permite selecionar o cartão inteiro.
+            // Permite selecionar o cartão inteiro para iniciar o treino.
             holder.itemView.setOnClickListener(v -> {
                 abrirTreino(treino);
             });
@@ -557,9 +631,11 @@ public class TreinoGuiadoLista extends BaseActivity {
             TextView txtCategoria;
             TextView txtOrigem;
             Button btnIniciar;
+            Button btnRanking;
             View acoesPersonalizadas;
             Button btnEditar;
             Button btnExcluir;
+            SwitchCompat switchCamera;
 
             TreinoViewHolder(View itemView) {
                 super(itemView);
@@ -574,9 +650,11 @@ public class TreinoGuiadoLista extends BaseActivity {
                 txtOrigem =
                         itemView.findViewById(R.id.txtOrigemTreino);
                 btnIniciar = itemView.findViewById(R.id.btnIniciarTreinoGuiado);
+                btnRanking = itemView.findViewById(R.id.btnRankingTreinoGuiado);
                 acoesPersonalizadas = itemView.findViewById(R.id.acoesDesafioPersonalizado);
                 btnEditar = itemView.findViewById(R.id.btnEditarTreinoGuiado);
                 btnExcluir = itemView.findViewById(R.id.btnExcluirTreinoGuiado);
+                switchCamera = itemView.findViewById(R.id.switchCameraTreino);
             }
         }
     }
@@ -599,6 +677,7 @@ public class TreinoGuiadoLista extends BaseActivity {
         intent.putExtra("treino_categoria", treino.getCategoria());
         intent.putExtra("treino_origem", treino.getOrigem());
         intent.putExtra("treino_sequencia", treino.getSequenciaGolpes());
+        intent.putExtra("treino_usar_camera", treino.isUsarCamera());
 
         try {
             startActivity(intent);
@@ -609,6 +688,14 @@ public class TreinoGuiadoLista extends BaseActivity {
                     Toast.LENGTH_LONG
             ).show();
         }
+    }
+
+    private void abrirRankingDesafio(Treino treino) {
+        Intent intent = new Intent(this, RankingActivity.class);
+        intent.putExtra(RankingActivity.EXTRA_MODO, RankingActivity.MODO_DESAFIO);
+        intent.putExtra(RankingActivity.EXTRA_DESAFIO_ID, treino.getId());
+        intent.putExtra(RankingActivity.EXTRA_DESAFIO_NOME, treino.getNome());
+        startActivity(intent);
     }
 
     private void editarDesafio(Treino treino) {

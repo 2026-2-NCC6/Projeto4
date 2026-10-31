@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
                 HistoricoTreinoEntity.class,
                 DesafioEntity.class
         },
-        version = 6,
+        version = 7,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -80,6 +80,14 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("ALTER TABLE `historico_treinos` ADD COLUMN `metricasGolpesJson` TEXT NOT NULL DEFAULT '{}'");
+        }
+    };
+
+    /** Adiciona a opção de câmera em desafios existentes, desligada por padrão. */
+    public static final Migration MIGRATION_6_7 = new Migration(6, 7) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `desafios_personalizados` ADD COLUMN `usaCamera` INTEGER NOT NULL DEFAULT 0");
         }
     };
 

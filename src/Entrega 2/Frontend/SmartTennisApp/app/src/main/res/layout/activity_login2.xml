@@ -179,6 +179,8 @@
                 android:text="Treine offline e sincronize seus dados quando o servidor estiver disponível."
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
+
+            
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

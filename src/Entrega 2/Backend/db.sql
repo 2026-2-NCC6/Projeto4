@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS desafio_personalizado (
   atualizado_em_ms BIGINT NOT NULL,
   velocidade_alvo_kmh FLOAT NOT NULL DEFAULT 0,
   bolas_alvo INT UNSIGNED NOT NULL DEFAULT 0,
+  usa_camera TINYINT(1) NOT NULL DEFAULT 0,
   excluido TINYINT(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY idx_desafio_usuario_atualizado (usuario_id, atualizado_em_ms),

@@ -166,51 +166,15 @@
                     android:textColor="@color/st_text_secondary"
                     android:textSize="14sp" />
 
-                <EditText
-                    android:id="@+id/edtEndereco"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:autofillHints="url"
-                    android:backgroundTint="@color/st_text_secondary"
-                    android:hint="IP:porta (ex.: 192.168.0.10:8765)"
-                    android:inputType="textUri"
-                    android:maxLines="1"
-                    android:padding="12dp"
-                    android:textColor="@color/st_text_primary"
-                    android:textColorHint="@color/st_text_secondary"
-                    android:textSize="14sp" />
-
-                <EditText
-                    android:id="@+id/edtToken"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:autofillHints="password"
-                    android:backgroundTint="@color/st_text_secondary"
-                    android:hint="Token exibido no computador"
-                    android:inputType="textPassword"
-                    android:maxLines="1"
-                    android:padding="12dp"
-                    android:textColor="@color/st_text_primary"
-                    android:textColorHint="@color/st_text_secondary"
-                    android:textSize="14sp" />
-
-                <Button
-                    android:id="@+id/btnConectarEstacao"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="8dp"
-                    android:textAllCaps="false"
-                    android:text="Conectar ao computador" />
-
                 <TextView
+                    android:id="@+id/txtDescobertaEstacao"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Celular e computador devem estar na mesma rede Wi-Fi. O vídeo permanece no computador; o app recebe apenas eventos e métricas."
+                    android:text="A estação Python é localizada automaticamente na rede local. Mantenha celular e computador na mesma rede Wi-Fi."
                     android:textColor="@color/st_text_secondary"
                     android:textSize="12sp" />
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
