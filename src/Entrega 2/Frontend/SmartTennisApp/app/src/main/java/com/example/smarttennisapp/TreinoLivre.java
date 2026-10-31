@@ -572,8 +572,8 @@ public class TreinoLivre extends BaseActivity {
         }
 
         // O firmware v2 envia, por exemplo:
-        // #12  >> FH DRIVE     85%  ~92km/h a=12.3g
-        // #13  ???  nao identificado (perto de FHD, d=...) w=...
+        // Exemplos do detector atual: >> SAQUE/SMASH 85%, >> VOLEIO 88%, >> FH DRIVE 85%.
+        // Rejeições: ??? nao identificado (perto de FHD, d=...).
         SwingEvento evento = ParserRaquete.parse(linha, System.currentTimeMillis());
         if (evento != null) {
             registroGolpes.registrar(evento);
@@ -587,10 +587,11 @@ public class TreinoLivre extends BaseActivity {
                         ? String.format(java.util.Locale.getDefault(), "%.0f km/h", evento.velRaqueteKmh) : "-- km/h");
             } else {
                 switch (evento.golpe) {
+                    case "SAQUE/SMASH":
                     case "SAQUE": totalSaques++; break;
                     case "FOREHAND": totalForehands++; break;
                     case "BACKHAND": totalBackhands++; break;
-                    default: break; // Smash, amortida, lob e ruído são detalhados no registro por classe.
+                    default: break; // Voleio e ruído são detalhados no registro por classe.
                 }
                 txtUltimoGolpe.setText(evento.nomeClasse);
                 txtConfianca.setText(evento.confiancaPct > 0

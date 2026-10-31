@@ -259,18 +259,18 @@ public class TreinoGuiadoLista extends BaseActivity {
         adicionarTreinoCatalogo("offline_008", "Desafio Grand Slam",
                 "Uma maratona de doze movimentos. Acerte todos para receber bônus de conclusão perfeita.",
                 18, "Avançado", "MARATONA", "SAQUE,FOREHAND,BACKHAND,FOREHAND,BACKHAND,SAQUE,FOREHAND,BACKHAND,FOREHAND,SAQUE,BACKHAND,FOREHAND");
-        adicionarTreinoCatalogo("offline_009", "Escada de Saques",
-                "Alterne saque plano, slice e kick. A meta é reconhecer e executar cada variação na ordem.",
-                12, "Avançado", "SAQUES VARIADOS", "SPL,SSL,SKK,SPL,SSL,SKK");
+        adicionarTreinoCatalogo("offline_009", "Saque e Smash",
+                "Treine a categoria combinada de saque e smash reconhecida pelo sensor.",
+                12, "Avançado", "SAQUE / SMASH", "SAQ,SAQ,SAQ,SAQ,SAQ,SAQ");
         adicionarTreinoCatalogo("offline_010", "Ataque e Jogo de Rede",
-                "Combine smash, voleios e amortidas para treinar mudanças rápidas de intenção.",
-                12, "Avançado", "REDE E ATAQUE", "SMA,FHV,BHV,AMO,FHV,BHV");
+                "Combine saque/smash, voleios e golpes de fundo para treinar mudanças rápidas de ritmo.",
+                12, "Avançado", "REDE E ATAQUE", "SAQ,VOL,FHD,VOL,BHD,VOL");
         adicionarTreinoCatalogo("offline_011", "Variações do Fundo",
                 "Misture drive e slice nos dois lados para desenvolver variedade e leitura do movimento.",
                 14, "Avançado", "VARIAÇÃO", "FHD,FHS,BHD,BHS,FHD,BHD");
-        adicionarTreinoCatalogo("offline_012", "Controle de Altura",
-                "Alterne lob e amortida para praticar trajetórias opostas e controle do toque.",
-                10, "Intermediário", "CONTROLE", "LOB,AMO,LOB,AMO,LOB,AMO");
+        adicionarTreinoCatalogo("offline_012", "Controle de Trajetória",
+                "Alterne drive e slice nos dois lados para variar a trajetória da bola.",
+                10, "Intermediário", "CONTROLE", "FHD,BHS,FHS,BHD,FHD,BHS");
         adicionarTreinoCatalogo("offline_013", "Precisão na Parede",
                 "Combine a sequência de golpes com a leitura dos impactos nos quadrantes centrais da parede.",
                 12, "Intermediário", "PRECISÃO", "FOREHAND,BACKHAND,FOREHAND,BACKHAND,FOREHAND,BACKHAND", true);
@@ -564,7 +564,8 @@ public class TreinoGuiadoLista extends BaseActivity {
                     executor.execute(() -> {
                         try {
                             db.desafioDAO().atualizarUsoCamera(treino.getId(), usuarioId, marcado, agora);
-                            SyncManager.sincronizarEmSegundoPlano(TreinoGuiadoLista.this, usuarioId);                        } catch (Exception erro) {
+                            SyncManager.sincronizarEmSegundoPlano(TreinoGuiadoLista.this, usuarioId);
+                        } catch (Exception erro) {
                             runOnUiThread(() -> {
                                 treino.setUsarCamera(!marcado);
                                 adapter.notifyDataSetChanged();

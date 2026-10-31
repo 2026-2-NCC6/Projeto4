@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -37,6 +38,7 @@ public class MeuPerfil extends BaseActivity {
         TextView nome = findViewById(R.id.textNomePerfil);
         TextView email = findViewById(R.id.textEmailPerfil);
         TextView nascimento = findViewById(R.id.textNascimentoPerfil);
+        ImageView avatar = findViewById(R.id.imageView);
 
         executor.execute(() -> {
             Usuario usuario = db.usuarioDAO().getUserById(id);
@@ -45,6 +47,7 @@ public class MeuPerfil extends BaseActivity {
                     nome.setText(usuario.nome);
                     email.setText(usuario.email);
                     nascimento.setText(usuario.data);
+                    avatar.setImageResource(com.example.smarttennisapp.util.AvatarCatalogo.drawableId(usuario.avatarId));
                 }
             });
         });

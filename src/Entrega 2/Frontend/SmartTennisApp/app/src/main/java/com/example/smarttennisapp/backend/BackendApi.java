@@ -42,12 +42,18 @@ public final class BackendApi {
     }
 
     public static JSONObject cadastrar(Context context, String nome, String email, String senha, String dataNascimento) throws IOException {
+        return cadastrar(context, nome, email, senha, dataNascimento, "avatar_01");
+    }
+
+    public static JSONObject cadastrar(Context context, String nome, String email, String senha,
+                                         String dataNascimento, String avatarId) throws IOException {
         JSONObject body = new JSONObject();
         try {
             body.put("nome", nome);
             body.put("email", email);
             body.put("senha", senha);
             if (dataNascimento != null && !dataNascimento.trim().isEmpty()) body.put("dataNascimento", dataNascimento);
+            body.put("avatarId", avatarId == null || avatarId.trim().isEmpty() ? "avatar_01" : avatarId.trim());
         } catch (Exception e) {
             throw new IOException("Nao foi possivel preparar o cadastro.", e);
         }
@@ -88,10 +94,10 @@ public final class BackendApi {
             URL url = new URL(baseUrl + path);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(method);
-            // Azure pode acordar uma instância parada e o bcrypt aumenta o tempo de auth.
-            // Limites curtos causavam falso erro depois de o servidor já gravar o cadastro.
-            connection.setConnectTimeout(15000);
-            connection.setReadTimeout(30000);
+            // A instância Azure pode estar fria; autenticação também executa bcrypt.
+            // Estes limites são compartilhados por login, cadastro, sync e rankings.
+            connection.setConnectTimeout(BackendConfig.CONNECT_TIMEOUT_MS);
+            connection.setReadTimeout(BackendConfig.READ_TIMEOUT_MS);
             connection.setUseCaches(false);
             connection.setRequestProperty("Accept", "application/json");
             if (token != null && !token.trim().isEmpty()) {

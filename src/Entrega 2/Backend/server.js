@@ -15,6 +15,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const MAX_SYNC_ITEMS = 1000;
+const AVATAR_IDS = new Set(Array.from({ length: 12 }, (_, index) => `avatar_${String(index + 1).padStart(2, '0')}`));
 
 if (JWT_SECRET.length < 32 || JWT_SECRET.startsWith('troque-por')) {
   console.error('JWT_SECRET precisa ter pelo menos 32 caracteres. Copie .env.example para .env e configure-o.');
@@ -71,8 +72,19 @@ function publicUser(row) {
     id: Number(row.id),
     nome: row.nome,
     email: row.email,
-    dataNascimento: row.data_nascimento || null
+    dataNascimento: row.data_nascimento || null,
+    avatarId: row.avatar_id || 'avatar_01'
   };
+}
+
+function normalizeAvatarId(value) {
+  const id = asString(value, 40, 'avatar_01');
+  return AVATAR_IDS.has(id) ? id : 'avatar_01';
+}
+
+function rankingLimit(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, Math.min(100, parsed)) : 50;
 }
 
 function issueToken(row) {
@@ -244,6 +256,7 @@ app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
   const email = cleanEmail(req.body?.email);
   const senha = typeof req.body?.senha === 'string' ? req.body.senha : '';
   const dataNascimento = asString(req.body?.dataNascimento, 10, '') || null;
+  const avatarId = normalizeAvatarId(req.body?.avatarId);
 
   if (nome.length < 2) return res.status(400).json({ error: 'Informe um nome com pelo menos 2 caracteres.', code: 'INVALID_NAME' });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
@@ -256,9 +269,9 @@ app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
   const senhaHash = await bcrypt.hash(senha, 12);
   try {
     const [result] = await pool.execute(
-      'INSERT INTO usuario (nome, email, senha_hash, data_nascimento) VALUES (?, ?, ?, ?)',
-      [nome, email, senhaHash, dataNascimento]);
-    const user = { id: result.insertId, nome, email, data_nascimento: dataNascimento };
+      'INSERT INTO usuario (nome, email, senha_hash, data_nascimento, avatar_id) VALUES (?, ?, ?, ?, ?)',
+      [nome, email, senhaHash, dataNascimento, avatarId]);
+    const user = { id: result.insertId, nome, email, data_nascimento: dataNascimento, avatar_id: avatarId };
     return res.status(201).json({ token: issueToken(user), user: publicUser(user) });
   } catch (error) {
     if (error && error.code === 'ER_DUP_ENTRY') {
@@ -274,7 +287,7 @@ app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
   if (!email || !senha) return res.status(400).json({ error: 'Informe e-mail e senha.', code: 'MISSING_CREDENTIALS' });
 
   const [rows] = await pool.execute(
-    'SELECT id, nome, email, senha_hash, data_nascimento FROM usuario WHERE email = ? LIMIT 1', [email]);
+    'SELECT id, nome, email, senha_hash, data_nascimento, avatar_id FROM usuario WHERE email = ? LIMIT 1', [email]);
   const user = rows[0];
   if (!user || !(await bcrypt.compare(senha, user.senha_hash))) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.', code: 'INVALID_CREDENTIALS' });
@@ -284,7 +297,7 @@ app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
 
 app.get('/api/auth/me', requireAuth, asyncRoute(async (req, res) => {
   const [rows] = await pool.execute(
-    'SELECT id, nome, email, data_nascimento FROM usuario WHERE id = ? LIMIT 1', [req.auth.userId]);
+    'SELECT id, nome, email, data_nascimento, avatar_id FROM usuario WHERE id = ? LIMIT 1', [req.auth.userId]);
   if (!rows[0]) return res.status(404).json({ error: 'Conta nao encontrada.', code: 'USER_NOT_FOUND' });
   res.json({ user: publicUser(rows[0]) });
 }));
@@ -292,18 +305,95 @@ app.get('/api/auth/me', requireAuth, asyncRoute(async (req, res) => {
 app.patch('/api/auth/me', requireAuth, asyncRoute(async (req, res) => {
   const nome = req.body?.nome === undefined ? undefined : asString(req.body.nome, 80);
   const dataNascimento = req.body?.dataNascimento === undefined ? undefined : (asString(req.body.dataNascimento, 10) || null);
+  const avatarId = req.body?.avatarId === undefined ? undefined : normalizeAvatarId(req.body.avatarId);
   if (nome !== undefined && nome.length < 2) return res.status(400).json({ error: 'Nome invalido.', code: 'INVALID_NAME' });
 
   const updates = [];
   const values = [];
   if (nome !== undefined) { updates.push('nome = ?'); values.push(nome); }
   if (dataNascimento !== undefined) { updates.push('data_nascimento = ?'); values.push(dataNascimento); }
+  if (avatarId !== undefined) { updates.push('avatar_id = ?'); values.push(avatarId); }
   if (!updates.length) return res.status(400).json({ error: 'Nenhum campo para atualizar.', code: 'EMPTY_UPDATE' });
   updates.push('atualizado_em = CURRENT_TIMESTAMP');
   values.push(req.auth.userId);
   await pool.execute(`UPDATE usuario SET ${updates.join(', ')} WHERE id = ?`, values);
-  const [rows] = await pool.execute('SELECT id, nome, email, data_nascimento FROM usuario WHERE id = ?', [req.auth.userId]);
+  const [rows] = await pool.execute('SELECT id, nome, email, data_nascimento, avatar_id FROM usuario WHERE id = ?', [req.auth.userId]);
   res.json({ user: publicUser(rows[0]) });
+}));
+
+
+// Ranking global: soma a pontuacao de todas as sessoes guiadas concluidas.
+// TREINO_LIVRE fica de fora porque mede volume de golpes e nao gera pontuacao.
+app.get('/api/rankings/global', requireAuth, asyncRoute(async (req, res) => {
+  const limit = rankingLimit(req.query.limit);
+  const [rows] = await pool.execute(
+    `SELECT u.id, u.nome, u.avatar_id AS avatarId,
+            COALESCE(SUM(h.pontuacao), 0) AS pontuacaoTotal,
+            COUNT(h.id) AS sessoes,
+            COUNT(DISTINCT h.treino_id) AS desafiosConcluidos,
+            MAX(h.data_conclusao_ms) AS ultimaSessao
+       FROM usuario u
+       INNER JOIN historico_treino h ON h.usuario_id = u.id
+      WHERE h.concluido = 1 AND h.treino_id <> 'TREINO_LIVRE'
+      GROUP BY u.id, u.nome, u.avatar_id
+      ORDER BY pontuacaoTotal DESC, sessoes DESC, ultimaSessao DESC, u.id ASC`);
+
+  const classificados = rows.map((row, index) => ({
+    id: Number(row.id),
+    nome: row.nome || 'Jogador',
+    avatarId: row.avatarId || 'avatar_01',
+    pontuacaoTotal: Number(row.pontuacaoTotal || 0),
+    sessoes: Number(row.sessoes || 0),
+    sessoesConcluidas: Number(row.sessoes || 0),
+    desafiosConcluidos: Number(row.desafiosConcluidos || 0),
+    posicao: index + 1
+  }));
+  const meuRanking = classificados.find(item => item.id === req.auth.userId) || null;
+  res.json({
+    ranking: classificados.slice(0, limit),
+    meuRanking,
+    totalJogadores: classificados.length
+  });
+}));
+
+// Ranking de desafio: considera somente a melhor execucao concluida de cada jogador.
+app.get('/api/rankings/challenges/:id', requireAuth, asyncRoute(async (req, res) => {
+  const desafioId = asString(req.params.id, 80);
+  if (!desafioId) return res.status(400).json({ error: 'Identificador do desafio invalido.', code: 'INVALID_CHALLENGE_ID' });
+  const limit = rankingLimit(req.query.limit);
+  const [rows] = await pool.execute(
+    `SELECT u.id, u.nome, u.avatar_id AS avatarId,
+            h.pontuacao, h.tempo_segundos, h.data_conclusao_ms
+       FROM usuario u
+       INNER JOIN historico_treino h ON h.usuario_id = u.id
+      WHERE h.concluido = 1 AND h.treino_id = ?
+      ORDER BY h.pontuacao DESC, h.tempo_segundos ASC, h.data_conclusao_ms DESC, h.id DESC`,
+    [desafioId]);
+
+  const melhorPorJogador = new Map();
+  for (const row of rows) {
+    const id = Number(row.id);
+    if (!melhorPorJogador.has(id)) {
+      melhorPorJogador.set(id, {
+        id,
+        nome: row.nome || 'Jogador',
+        avatarId: row.avatarId || 'avatar_01',
+        pontuacao: Number(row.pontuacao || 0),
+        tempoSegundos: Number(row.tempo_segundos || 0),
+        execucoes: 0
+      });
+    }
+    melhorPorJogador.get(id).execucoes += 1;
+  }
+  const classificados = Array.from(melhorPorJogador.values())
+    .sort((a, b) => b.pontuacao - a.pontuacao || a.tempoSegundos - b.tempoSegundos || a.id - b.id)
+    .map((item, index) => ({ ...item, posicao: index + 1 }));
+  const meuRanking = classificados.find(item => item.id === req.auth.userId) || null;
+  res.json({
+    ranking: classificados.slice(0, limit),
+    meuRanking,
+    totalJogadores: classificados.length
+  });
 }));
 
 // Sincronizacao em lote: mescla os dados enviados e devolve o snapshot da conta.

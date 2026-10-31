@@ -1,24 +1,24 @@
 package com.example.smarttennisapp.jogo;
 
-/** Evento de golpe emitido pelo ESP32, com classe detalhada e família compatível com o app antigo. */
+/** Evento de golpe recebido do ESP32, com classe exata, nome e métricas do movimento. */
 public final class SwingEvento {
     public static final String INDEFINIDO = "?";
 
-    /** Família geral: SAQUE, FOREHAND, BACKHAND, SMASH, AMORTIDA, LOB, OUTRO ou "?". */
+    /** Família: SAQUE/SMASH, FOREHAND, BACKHAND, VOLEIO, OUTRO ou "?". */
     public final String golpe;
-    /** Código exato do firmware: SPL, SSL, SKK, SMA, FHD, FHS, FHV, BHD, BHS, BHV, AMO, LOB, RUI ou "?". */
+    /** Código interno: SAQ, FHD, FHS, BHD, BHS, VOL, RUI ou "?". */
     public final String codigoClasse;
     public final String nomeClasse;
     public final int confiancaPct;
     public final double aceleracaoG;
-    /** Mantido para compatibilidade; o detector v2 não envia dps na linha de classificação. */
+    /** Mantido para compatibilidade com versões anteriores do firmware. */
     public final double velAngularDps;
-    /** Velocidade estimada da cabeça da raquete emitida pelo detector v2, em km/h. */
+    /** Velocidade estimada da cabeça da raquete enviada pelo detector, em km/h. */
     public final double velRaqueteKmh;
     public final long chegadaMs;
     public final long contatoMs;
 
-    /** Construtor legado mantido para não quebrar outras integrações locais. */
+    /** Construtor legado mantido para integrações locais anteriores. */
     public SwingEvento(String golpe, int confiancaPct, double aceleracaoG, double velAngularDps,
                        long chegadaMs, long contatoMs) {
         this(golpe, golpe, golpe, confiancaPct, aceleracaoG, velAngularDps, 0.0, chegadaMs, contatoMs);

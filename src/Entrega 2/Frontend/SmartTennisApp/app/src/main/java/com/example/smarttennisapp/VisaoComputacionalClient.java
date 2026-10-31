@@ -325,8 +325,9 @@ public final class VisaoComputacionalClient {
             URL url = new URL(baseUrl + path);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(method);
-            connection.setConnectTimeout(2600);
-            connection.setReadTimeout(3000);
+            // A estacao local pode estar inicializando webcam/modelo ou usando Wi-Fi congestionado.
+            connection.setConnectTimeout(10_000);
+            connection.setReadTimeout(20_000);
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("X-SmartTennis-Token", token);
             connection.setUseCaches(false);

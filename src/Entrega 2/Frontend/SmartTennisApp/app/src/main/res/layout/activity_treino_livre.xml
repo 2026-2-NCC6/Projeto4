@@ -200,7 +200,7 @@
                             android:gravity="center"
                             android:orientation="vertical"
                             android:padding="11dp">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SAQUES" android:textColor="@color/text_muted" android:textSize="10sp" android:textStyle="bold" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SAQUE / SMASH" android:textColor="@color/text_muted" android:textSize="10sp" android:textStyle="bold" />
                             <TextView android:id="@+id/txtSaques" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0" android:textColor="@color/text_primary" android:textSize="23sp" android:textStyle="bold" />
                         </LinearLayout>
                         <LinearLayout

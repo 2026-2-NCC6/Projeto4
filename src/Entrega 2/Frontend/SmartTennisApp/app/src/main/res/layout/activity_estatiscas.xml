@@ -282,7 +282,7 @@
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="15dp">
                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Distribuição dos golpes" android:textColor="@color/st_text_primary" android:textSize="15sp" android:textStyle="bold" />
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="13dp" android:gravity="center_vertical" android:orientation="horizontal">
-                        <TextView android:layout_width="78dp" android:layout_height="wrap_content" android:text="Saque" android:textColor="@color/st_text_secondary" android:textSize="13sp" />
+                        <TextView android:layout_width="94dp" android:layout_height="wrap_content" android:text="Saque / smash" android:textColor="@color/st_text_secondary" android:textSize="13sp" />
                         <ProgressBar android:id="@+id/barraSaquesStats" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_height="7dp" android:layout_weight="1" android:max="100" android:progress="0" android:progressBackgroundTint="@color/st_surface_alt" android:progressTint="@color/st_accent" />
                         <TextView android:id="@+id/txtSaquesStats" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="end" android:text="0" android:textColor="@color/st_text_primary" android:textSize="13sp" android:textStyle="bold" />
                     </LinearLayout>

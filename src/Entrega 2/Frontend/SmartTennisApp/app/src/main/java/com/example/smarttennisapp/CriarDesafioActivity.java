@@ -35,18 +35,15 @@ public class CriarDesafioActivity extends BaseActivity {
     private static final int MAX_ETAPAS = 50;
     private static final int DURACAO_MAXIMA_MINUTOS = 90;
 
-    // As três primeiras opções preservam a seleção genérica usada pelos desafios antigos.
+    // Metas genéricas e classes disponíveis no detector ESP32 atual.
     private static final String[] GOLPES = {
             "SAQUE", "FOREHAND", "BACKHAND",
-            "SPL", "SSL", "SKK", "SMA", "FHD", "FHS", "FHV",
-            "BHD", "BHS", "BHV", "AMO", "LOB", "RUI"
+            "SAQ", "FHD", "FHS", "BHD", "BHS", "VOL"
     };
     private static final String[] NOMES_GOLPES = {
-            "Saque · qualquer tipo", "Forehand · qualquer tipo", "Backhand · qualquer tipo",
-            "Saque plano", "Saque slice", "Saque kick", "Smash",
-            "Forehand drive", "Forehand slice", "Forehand voleio",
-            "Backhand drive", "Backhand slice", "Backhand voleio",
-            "Amortida", "Lob", "Ruído / outro"
+            "Saque / smash · categoria combinada", "Forehand · drive ou slice", "Backhand · drive ou slice",
+            "Saque / smash", "Forehand drive", "Forehand slice",
+            "Backhand drive", "Backhand slice", "Voleio"
     };
     private static final String[] DIFICULDADES = {"Iniciante", "Intermediário", "Avançado"};
 

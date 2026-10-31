@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS usuario (
   email VARCHAR(254) NOT NULL,
   senha_hash VARCHAR(255) NOT NULL,
   data_nascimento VARCHAR(10) NULL,
+  avatar_id VARCHAR(40) NOT NULL DEFAULT 'avatar_01',
   gamificacao_json LONGTEXT NULL,
   criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -76,6 +77,7 @@ CREATE TABLE IF NOT EXISTS historico_treino (
   PRIMARY KEY (id),
   UNIQUE KEY uq_historico_usuario_sync (usuario_id, sync_id),
   KEY idx_historico_usuario_data (usuario_id, data_conclusao_ms),
+  KEY idx_historico_ranking (concluido, treino_id, usuario_id, pontuacao, tempo_segundos),
   CONSTRAINT fk_historico_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 

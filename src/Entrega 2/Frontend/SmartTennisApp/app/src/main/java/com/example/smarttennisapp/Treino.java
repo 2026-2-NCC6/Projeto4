@@ -878,10 +878,11 @@ public class Treino extends BaseActivity {
 
     private void registrarTipoGolpe(String familia) {
         switch (familia) {
+            case "SAQUE/SMASH":
             case "SAQUE": saques++; break;
             case "FOREHAND": forehands++; break;
             case "BACKHAND": backhands++; break;
-            default: break; // Smash, amortida, lob e ruído são preservados por classe no JSON.
+            default: break; // Voleio e ruído ficam detalhados por classe no JSON.
         }
     }
 
@@ -1006,7 +1007,7 @@ public class Treino extends BaseActivity {
             case "PRECISAO": return "impactos nas zonas centrais";
             case "QUADRANTES": return "quadrantes diferentes visitados";
             case "RALI": return "impactos válidos na parede";
-            case "SAQUE": return "impactos confirmados dos saques";
+            case "SAQUE": return "impactos confirmados de saque / smash";
             default: return "impactos confirmados";
         }
     }
@@ -1359,7 +1360,7 @@ public class Treino extends BaseActivity {
                 calcularRank(concluidoPorObjetivo, perfeito) +
                 (perfeito ? "  ·  DESAFIO PERFEITO!\n" : (concluidoPorObjetivo ? "  ·  DESAFIO CONCLUÍDO\n" : "  ·  CONTINUE EVOLUINDO\n")) +
                 "Acertos: " + golpesCorretos + "/" + totalGolpes +
-                "\nSaques: " + saques + "  ·  Forehands: " + forehands + "  ·  Backhands: " + backhands +
+                "\nSaque / smash: " + saques + "  ·  Forehands: " + forehands + "  ·  Backhands: " + backhands +
                 "\nClasses detectadas: " + registroGolpes.resumoPorClasse() +
                 "\nMelhor combo: x" + melhorCombo +
                 (treinoUsaCamera ? "\nCâmera: " + impactosCamera + " impactos · " + quadrantesVisitados() + "/6 quadrantes" +

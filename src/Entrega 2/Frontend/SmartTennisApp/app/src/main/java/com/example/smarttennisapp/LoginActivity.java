@@ -78,6 +78,7 @@ public class LoginActivity extends BaseActivity {
                         usuario.nome = usuarioRemoto.optString("nome", "Jogador");
                         usuario.email = usuarioRemoto.optString("email", email);
                         usuario.data = usuarioRemoto.isNull("dataNascimento") ? "" : usuarioRemoto.optString("dataNascimento", "");
+                        usuario.avatarId = usuarioRemoto.optString("avatarId", "avatar_01");
                         usuario.senha = SenhaLocalUtil.gerarHash(senha);
                         if (idExistente > 0) db.usuarioDAO().update(usuario);
                         else db.usuarioDAO().insert(usuario);
@@ -116,13 +117,17 @@ public class LoginActivity extends BaseActivity {
                     // Se a conta foi criada offline, tenta vinculá-la ao backend no próximo login online.
                     boolean vinculada = false;
                     try {
-                        JSONObject novoLogin = BackendApi.cadastrar(this, usuarioLocal.nome, email, senha, usuarioLocal.data);
+                        JSONObject novoLogin = BackendApi.cadastrar(this, usuarioLocal.nome, email, senha, usuarioLocal.data, usuarioLocal.avatarId);
+                        aplicarAvatarRemoto(usuarioLocal, novoLogin);
+                        db.usuarioDAO().update(usuarioLocal);
                         SessaoRemota.salvar(this, novoLogin, idLocal);
                         vinculada = true;
                     } catch (BackendApi.ApiException e) {
                         if ("EMAIL_EXISTS".equals(e.code)) {
                             try {
                                 JSONObject loginExistente = BackendApi.login(this, email, senha);
+                                aplicarAvatarRemoto(usuarioLocal, loginExistente);
+                                db.usuarioDAO().update(usuarioLocal);
                                 SessaoRemota.salvar(this, loginExistente, idLocal);
                                 vinculada = true;
                             } catch (IOException ignorada) {
@@ -158,6 +163,14 @@ public class LoginActivity extends BaseActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    private void aplicarAvatarRemoto(Usuario usuarioLocal, JSONObject autenticacao) {
+        if (usuarioLocal == null || autenticacao == null) return;
+        JSONObject usuarioRemoto = autenticacao.optJSONObject("user");
+        if (usuarioRemoto != null) {
+            usuarioLocal.avatarId = usuarioRemoto.optString("avatarId", "avatar_01");
+        }
     }
 
     private void mostrarErroLogin(String mensagem) {

@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -19,6 +20,7 @@ import com.example.smarttennisapp.backend.BackendApi;
 import com.example.smarttennisapp.backend.SessaoRemota;
 import com.example.smarttennisapp.backend.SyncManager;
 import com.example.smarttennisapp.util.SessaoUsuario;
+import com.example.smarttennisapp.util.AvatarCatalogo;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -278,10 +280,21 @@ public class RankingActivity extends BaseActivity {
         pos.setMinWidth(dp(43));
         linha.addView(pos);
 
+        ImageView avatar = new ImageView(this);
+        avatar.setImageResource(AvatarCatalogo.drawableId(jogador.optString("avatarId", "avatar_01")));
+        avatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        avatar.setBackgroundResource(R.drawable.bg_avatar_perfil);
+        avatar.setClipToOutline(true);
+        avatar.setPadding(dp(2), dp(2), dp(2), dp(2));
+        LinearLayout.LayoutParams avatarP = new LinearLayout.LayoutParams(dp(44), dp(44));
+        avatarP.leftMargin = dp(4);
+        avatarP.rightMargin = dp(6);
+        linha.addView(avatar, avatarP);
+
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams infoP = new LinearLayout.LayoutParams(0, -2, 1f);
-        infoP.leftMargin = dp(9);
+        infoP.leftMargin = dp(3);
         infoP.rightMargin = dp(8);
         linha.addView(info, infoP);
 

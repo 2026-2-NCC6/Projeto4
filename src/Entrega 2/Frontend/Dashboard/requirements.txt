@@ -1,0 +1,9 @@
+streamlit>=1.40
+pandas>=2.0
+numpy
+plotly>=5.20
+sqlalchemy>=2.0
+pymysql>=1.1
+cryptography
+requests
+python-dotenv

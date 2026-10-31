@@ -1,8 +1,12 @@
 /*
  * ============================================================================
  *  DETECTOR DE GOLPES DE TENIS v2  -  ESP32 + MPU-6050 + Bluetooth (SPP)
- *  13 classes: saques (plano/slice/kick), smash, FH/BH (drive/slice/voleio),
- *              amortida, lob e RUIDO/OUTRO (movimentos que nao sao golpe)
+ *  7 classes: SAQUE/SMASH (golpe por cima), FH/BH drive, FH/BH slice, VOLEIO
+ *             e RUIDO/OUTRO (movimentos que nao sao golpe)
+ *  Mantidas so as classes que um unico IMU no cabo separa bem: por cima x
+ *  lateral x curto (voleio), lado FH x BH e trajetoria subindo (drive) x
+ *  descendo (slice). Variacoes de efeito/intencao (slice/kick de saque,
+ *  amortida, lob, voleio FH x BH) davam confusao e foram fundidas ou removidas.
  * ----------------------------------------------------------------------------
  *  O QUE MUDOU EM RELACAO A VERSAO ANTERIOR
  *
@@ -17,8 +21,9 @@
  *       +-2000dps): o golpe e marcado quando o sensor satura.
  *
  *  2) DETECCAO ADAPTATIVA
- *     Gatilho mais sensivel + validacao pos-captura (duracao, rotacao minima),
- *     para pegar voleios/amortidas sem disparar com caminhada ou raquete caindo.
+ *     Gatilho menos sensivel (600 dps / 6 g) + validacao pos-captura (pico de
+ *     giro, duracao, rotacao total), ajustaveis em tempo de execucao ('t' e 'y'),
+ *     para ignorar caminhada, raquete caindo, batidas e movimentos leves.
  *
  *  3) CLASSIFICADOR MAIS FORTE
  *     kNN por classe com pesos de Fisher (features mais discriminativas pesam
@@ -26,7 +31,7 @@
  *     precisao e confusoes por classe ('m'). Classes com poucas amostras ficam
  *     inativas em vez de impedir o modelo.
  *
- *  4) ROTINA DE TREINO ('e'): ex.  e fhd 10 bhd 10 spl 5
+ *  4) ROTINA DE TREINO ('e'): ex.  e fhd 10 bhd 10 saq 5
  *     Conta acertos/erros por etapa e resume velocidade media/maxima.
  *
  *  5) ARMAZENAMENTO: LittleFS (/golpes.bin), ate MAXLOG golpes. O modelo e
@@ -89,21 +94,26 @@ static const uint16_t WIN  = PRE + POST;
 #define MIN_PER_CLASS 5                   // amostras minimas p/ classe ativa
 
 // ------------------------------- classes ------------------------------------
-// Para criar uma classe nova basta ACRESCENTAR no fim das duas tabelas
+// Para criar uma classe nova basta ACRESCENTAR no fim do enum e das duas tabelas
 // (o log existente continua valido).
+enum ClsId { C_SAQ, C_FHD, C_FHS, C_BHD, C_BHS, C_VOL, C_RUI, C_COUNT };
 static const char *const CLS[] = {
-  "SAQUE PLANO", "SAQUE SLICE", "SAQUE KICK", "SMASH",
-  "FH DRIVE", "FH SLICE", "FH VOLEIO",
-  "BH DRIVE", "BH SLICE", "BH VOLEIO",
-  "AMORTIDA", "LOB", "RUIDO/OUTRO"
+  "SAQUE/SMASH", "FH DRIVE", "FH SLICE", "BH DRIVE", "BH SLICE",
+  "VOLEIO", "RUIDO/OUTRO"
 };
 static const char *const CLSAB[] = {
-  "SPL", "SSL", "SKK", "SMA",
-  "FHD", "FHS", "FHV",
-  "BHD", "BHS", "BHV",
-  "AMO", "LOB", "RUI"
+  "SAQ", "FHD", "FHS", "BHD", "BHS", "VOL", "RUI"
 };
 static const int NCLS = sizeof(CLS) / sizeof(CLS[0]);
+static_assert(NCLS == C_COUNT, "CLS[] e enum ClsId fora de sincronia");
+static_assert(sizeof(CLSAB) / sizeof(CLSAB[0]) == NCLS, "CLSAB[] e CLS[] fora de sincronia");
+
+// Migracao do log antigo (13 classes): indice antigo -> classe nova (255 = descartar)
+//   0 SPL 1 SSL 2 SKK 3 SMA 4 FHD 5 FHS 6 FHV 7 BHD 8 BHS 9 BHV 10 AMO 11 LOB 12 RUI
+static const int OLD_NCLS = 13;
+static const uint8_t OLD2NEW[OLD_NCLS] = {
+  C_SAQ, C_SAQ, C_SAQ, C_SAQ, C_FHD, C_FHS, C_VOL, C_BHD, C_BHS, C_VOL, 255, 255, C_RUI
+};
 
 // ------------------------------- features -----------------------------------
 enum Feat {
@@ -138,7 +148,8 @@ static const uint32_t CAL_MAGIC = 0x544E5331;
 
 struct LogEntry { uint8_t cls; uint8_t flags; uint16_t rsv; float f[NFEAT]; };
 struct FileHdr  { uint32_t magic; uint16_t nfeat; uint16_t recsz; };
-static const uint32_t LOG_MAGIC = 0x544E4C32;
+static const uint32_t LOG_MAGIC = 0x544E4C33;      // log com 7 classes
+static const uint32_t LOG_MAGIC_V13 = 0x544E4C32;  // log antigo (13 classes) -> migrado ao ler
 static const char *LOG_PATH = "/golpes.bin";
 static const char *LOG_TMP  = "/golpes.tmp";
 static const char *LOG_BAK  = "/golpes.bak";
@@ -207,13 +218,15 @@ uint32_t tPrev = 0, lastTrigMs = 0;
 float tempC = 0;
 
 // parametros ajustaveis em tempo de execucao
-float trigAccG = 4.5f, trigGyrDps = 350.0f;
+float trigAccG = 6.0f, trigGyrDps = 600.0f;   // gatilho: qualquer um dos dois dispara a captura
+float minPkDps = 500.0f;        // validacao: pico de giro minimo para ser golpe (dps)
+float minRotDeg = 60.0f;        // validacao: rotacao total minima na fase de avanco (graus)
 uint32_t refracMs = 800;
 float rejectK = 1.3f;           // multiplica o limite de rejeicao por classe (maior = mais permissivo)
 float shockThr = 2.0f;          // g (2a diferenca) para considerar "houve impacto"
 float armM = 0.60f;             // distancia sensor -> centro das cordas (m)
 
-int curClass = 4;
+int curClass = C_FHD;
 unsigned long swingNum = 0;
 unsigned long sessCount[NCLS];
 float sessSum[NCLS], sessMax[NCLS];
@@ -342,8 +355,10 @@ void fsReadLog() {
   File fl = LittleFS.open(LOG_PATH, "r");
   if (!fl) return;
   FileHdr h;
-  if (fl.read((uint8_t *)&h, sizeof(h)) != sizeof(h) || h.magic != LOG_MAGIC ||
-      h.nfeat != NFEAT || h.recsz != sizeof(LogEntry)) {
+  bool migrate = false;
+  if (fl.read((uint8_t *)&h, sizeof(h)) == sizeof(h)) migrate = (h.magic == LOG_MAGIC_V13);
+  else h.magic = 0;
+  if ((h.magic != LOG_MAGIC && !migrate) || h.nfeat != NFEAT || h.recsz != sizeof(LogEntry)) {
     fl.close();
     Serial.println("ATENCAO: log incompativel ignorado (guardado como /golpes.bak)");
     LittleFS.remove(LOG_BAK);
@@ -353,12 +368,23 @@ void fsReadLog() {
   size_t body = fl.size() - sizeof(h);
   size_t cnt = body / sizeof(LogEntry);
   bool ragged = (body % sizeof(LogEntry)) != 0;
+  uint16_t dropped = 0;
   for (size_t i = 0; i < cnt && lgN < MAXLOG; i++) {
     if (fl.read((uint8_t *)&lgE[lgN], sizeof(LogEntry)) != sizeof(LogEntry)) break;
-    if (lgE[lgN].cls < NCLS) lgN++;
+    if (migrate) {
+      uint8_t o = lgE[lgN].cls;
+      if (o < OLD_NCLS && OLD2NEW[o] != 255) { lgE[lgN].cls = OLD2NEW[o]; lgN++; }
+      else dropped++;
+    } else if (lgE[lgN].cls < NCLS) lgN++;
   }
   fl.close();
-  if (ragged || cnt > MAXLOG) fsRewrite();   // limpa registro truncado por queda de energia
+  if (migrate) {                             // guarda o log antigo e grava o novo
+    LittleFS.remove(LOG_BAK);
+    LittleFS.rename(LOG_PATH, LOG_BAK);
+    fsRewrite();
+    Serial.printf("Log migrado p/ 7 classes: %u mantidos, %u descartados (amortida/lob). Original em /golpes.bak\n",
+                  lgN, dropped);
+  } else if (ragged || cnt > MAXLOG) fsRewrite();   // limpa registro truncado por queda de energia
 }
 
 void loadAll() {
@@ -653,7 +679,7 @@ bool computeFeatures(float *f, SwingInfo &si) {
   si.durMs = (iE - iS) * DT_MS;
 
   // validacao: descarta o que nao parece golpe
-  if (gPk < 0.6f * trigGyrDps) { si.why = "sem rotacao de golpe"; return false; }
+  if (gPk < minPkDps)          { si.why = "pico de giro baixo (movimento leve)"; return false; }
   if (si.durMs < 40.0f)        { si.why = "pulso curto (batida/ruido)"; return false; }
   if (si.durMs > 900.0f)       { si.why = "movimento longo (nao e golpe)"; return false; }
 
@@ -663,7 +689,7 @@ bool computeFeatures(float *f, SwingInfo &si) {
     rotTot += s.GM[i] * DT; gsq += s.GM[i] * s.GM[i];
   }
   float gRms = sqrtf(gsq / (iE - iS + 1));
-  if (rotTot < 30.0f) { si.why = "rotacao total pequena"; return false; }
+  if (rotTot < minRotDeg) { si.why = "rotacao total pequena"; return false; }
 
   // 3) impacto: pico da 2a diferenca da aceleracao perto do pico de giro
   for (int i = 0; i < n; i++) {
@@ -858,7 +884,7 @@ void drillStart(char *args) {
     d.cls[d.n] = (uint8_t)c; d.goal[d.n] = (uint16_t)g; d.n++;
     tok = strtok(NULL, " ,;");
   }
-  if (!d.n) { out("# use: e fhd 10 bhd 10 spl 5\n"); return; }
+  if (!d.n) { out("# use: e fhd 10 bhd 10 saq 5\n"); return; }
   if (!mdl.ok || mdlDirty) { if (!computeModel(false)) return; }
   for (int i = 0; i < d.n; i++)
     if (!mdl.active[d.cls[i]]) { out("# %s sem amostras suficientes no modelo\n", CLSAB[d.cls[i]]); return; }
@@ -933,7 +959,7 @@ void printHelp() {
   out(" l <cod>  classe de treino\n");
   out(" n  lista de classes\n");
   out(" e <cod> <n> ... rotina\n");
-  out("   ex: e fhd 10 bhd 10 spl 5\n");
+  out("   ex: e fhd 10 bhd 10 saq 5\n");
   out("-- edicao do treino --\n");
   out(" g [cod]    listar golpes\n");
   out(" o          mais suspeitos\n");
@@ -941,6 +967,7 @@ void printHelp() {
   out(" z sim      apaga TODO o log\n");
   out("-- ajustes --\n");
   out(" t <g> <dps>  gatilhos\n");
+  out(" y <dps> <graus>  validacao\n");
   out(" u <k> rejeicao  i <g> impacto\n");
   out(" w <m> braco da raquete\n");
   out(" p parametros  v estatisticas\n");
@@ -956,6 +983,7 @@ void calPrint() {
   outU("  gyro     : %+.3f %+.3f %+.3f\n", cal.gOff[0], cal.gOff[1], cal.gOff[2]);
   out ("  gatilhos %.1fg/%.0fdps | refrat %lums | rej x%.2f\n", trigAccG, trigGyrDps,
        (unsigned long)refracMs, rejectK);
+  out ("  validacao: pico>=%.0fdps | rotacao>=%.0fgraus\n", minPkDps, minRotDeg);
   out ("  impacto>=%.1fg | braco %.2fm | chip %.1fC\n", shockThr, armM, tempC);
   out ("  log %u/%u | modelo: %s | classe: %s\n", lgN, MAXLOG, mdl.ok ? "OK" : "AUSENTE", CLS[curClass]);
 }
@@ -1034,7 +1062,7 @@ void handleCommand(char *c) {
     case 'e':
       if (!*arg) {
         if (drill.on) { drillSummary(); drill.on = false; }
-        else out("# use: e fhd 10 bhd 10 spl 5\n");
+        else out("# use: e fhd 10 bhd 10 saq 5\n");
       } else drillStart(arg);
       break;
 
@@ -1061,6 +1089,10 @@ void handleCommand(char *c) {
     case 't': { float a, g;
       if (sscanf(arg, "%f %f", &a, &g) == 2) { trigAccG = a; trigGyrDps = g; }
       out("# gatilhos %.1fg / %.0fdps\n", trigAccG, trigGyrDps); break; }
+
+    case 'y': { float a, r;
+      if (sscanf(arg, "%f %f", &a, &r) == 2 && a > 0 && r >= 0) { minPkDps = a; minRotDeg = r; }
+      out("# validacao: pico >= %.0fdps | rotacao total >= %.0f graus\n", minPkDps, minRotDeg); break; }
 
     case 'u': { float v;
       if (sscanf(arg, "%f", &v) == 1 && v > 0) rejectK = v;

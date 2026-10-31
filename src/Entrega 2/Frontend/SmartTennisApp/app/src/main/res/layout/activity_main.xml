@@ -6,79 +6,191 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/app_background"
+    android:clipChildren="false"
     tools:context=".MainActivity">
 
-    <!-- O MediaPlayer usa preenchimento com corte central para preservar a proporção. -->
-    <VideoView
-        android:id="@+id/videoTennisBall"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <!-- Luzes decorativas discretas no fundo, sem mídia ou animação pesada. -->
+    <View
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:alpha="0.55"
+        android:background="@drawable/bg_splash_glow"
+        android:translationX="100dp"
+        android:translationY="-110dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <View
-        android:id="@+id/splashScrim"
+        android:layout_width="190dp"
+        android:layout_height="190dp"
+        android:alpha="0.35"
+        android:background="@drawable/bg_splash_glow_secondary"
+        android:translationX="-95dp"
+        android:translationY="45dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ScrollView
+        android:id="@+id/splashContent"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#720F1620"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="ifContentScrolls"
+        android:paddingStart="24dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <ImageView
-        android:id="@+id/imageView2"
-        android:layout_width="152dp"
-        android:layout_height="152dp"
-        android:layout_marginTop="32dp"
-        android:contentDescription="Logo SmartTennis"
-        android:scaleType="fitCenter"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/logo" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginEnd="28dp"
-        android:fontFamily="sans-serif-medium"
-        android:gravity="center"
-        android:letterSpacing="0.01"
-        android:shadowColor="#C0000000"
-        android:shadowDx="0"
-        android:shadowDy="2"
-        android:shadowRadius="8"
-        android:text="@string/splash_screen"
-        android:textColor="@color/text_primary"
-        android:textSize="27sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@id/btnEntrar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imageView2"
-        app:layout_constraintVertical_bias="1.0" />
+            <ImageView
+                android:id="@+id/imageView2"
+                android:layout_width="164dp"
+                android:layout_height="80dp"
+                android:contentDescription="Logo Arena Smart"
+                android:scaleType="fitCenter"
+                app:srcCompat="@drawable/logo_splash" />
 
-    <Button
-        android:id="@+id/btnEntrar"
-        android:layout_width="0dp"
-        android:layout_height="58dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="34dp"
-        android:backgroundTint="@color/accent"
-        android:elevation="8dp"
-        android:text="@string/btn_entrar"
-        android:textAllCaps="false"
-        android:textColor="@color/accent_text"
-        android:textSize="17sp"
-        android:textStyle="bold"
-        app:cornerRadius="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-2dp"
+                android:letterSpacing="0.22"
+                android:text="SMARTTENNIS"
+                android:textColor="@color/accent"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="190dp"
+                android:layout_marginTop="22dp"
+                android:background="@drawable/bg_splash_hero"
+                android:clipToOutline="true"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="Ilustração de uma quadra de tênis com uma bola em movimento"
+                    android:scaleType="fitCenter"
+                    app:srcCompat="@drawable/ic_splash_court" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_splash_chip"
+                    android:paddingStart="10dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="6dp"
+                    android:text="TECNOLOGIA EM QUADRA"
+                    android:textColor="@color/st_text_primary"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="25dp"
+                android:fontFamily="sans-serif"
+                android:gravity="center"
+                android:lineSpacingExtra="1dp"
+                android:text="Seu próximo ponto\ncomeça aqui."
+                android:textColor="@color/text_primary"
+                android:textSize="31sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:text="Treine com inteligência, acompanhe seus golpes e descubra sua evolução em quadra."
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_splash_chip"
+                    android:gravity="center"
+                    android:paddingStart="6dp"
+                    android:paddingTop="11dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="11dp"
+                    android:text="⌁  RAQUETE CONECTADA"
+                    android:textColor="@color/st_text_primary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="1dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_splash_chip"
+                    android:gravity="center"
+                    android:paddingStart="6dp"
+                    android:paddingTop="11dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="11dp"
+                    android:text="✦  EVOLUÇÃO REAL"
+                    android:textColor="@color/st_text_primary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnEntrar"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginTop="25dp"
+                android:backgroundTint="@color/accent"
+                android:elevation="3dp"
+                android:text="Começar agora  ›"
+                android:textAllCaps="false"
+                android:textColor="@color/accent_text"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="17dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="Entre ou crie sua conta para continuar"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

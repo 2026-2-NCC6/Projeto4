@@ -189,7 +189,7 @@ public class Estatiscas extends BaseActivity {
             }
         }
 
-        d.totalGolpes = d.saques + d.forehands + d.backhands + d.smashes + d.amortidas + d.lobs;
+        d.totalGolpes = d.saques + d.forehands + d.backhands + d.volleios + d.amortidas + d.lobs;
         d.precisao = tentativas > 0 ? (int) Math.round(acertos * 100.0 / tentativas) : -1;
         d.sequenciaDias = calcularSequenciaDias(d.historico, agora);
         SharedPreferences xpPrefs = getSharedPreferences("SmartTennisGamificacao", MODE_PRIVATE);
@@ -426,16 +426,27 @@ public class Estatiscas extends BaseActivity {
         JSONObject raiz = lerMetricasGolpes(h);
         JSONObject classes = raiz.optJSONObject("classes");
         if (classes == null) return;
-        for (String codigo : new String[]{"SPL", "SSL", "SKK", "SMA", "FHD", "FHS", "FHV", "BHD", "BHS", "BHV", "AMO", "LOB", "RUI"}) {
+        // Inclui as sete classes atuais e os códigos legados que ainda podem existir no histórico.
+        String[] codigosHistoricos = {"SAQ", "FHD", "FHS", "BHD", "BHS", "VOL", "RUI",
+                "SPL", "SSL", "SKK", "SMA", "FHV", "BHV", "AMO", "LOB"};
+        for (String codigo : codigosHistoricos) {
             JSONObject item = classes.optJSONObject(codigo);
             if (item == null) continue;
             int quantidade = Math.max(0, item.optInt("quantidade", 0));
             if (quantidade <= 0) continue;
-            Integer atual = d.contagemPorClasse.get(codigo);
-            d.contagemPorClasse.put(codigo, (atual == null ? 0 : atual) + quantidade);
-            if ("SMA".equals(codigo)) d.smashes += quantidade;
+
+            // Variações antigas que agora são uma só classe são somadas no mesmo rótulo.
+            String codigoAtual = com.example.smarttennisapp.jogo.ClasseGolpeRaquete.normalizarToken(codigo);
+            String chave = codigoAtual == null ? codigo : codigoAtual;
+            Integer atual = d.contagemPorClasse.get(chave);
+            d.contagemPorClasse.put(chave, (atual == null ? 0 : atual) + quantidade);
+
+            // SMA/AMO/LOB eram categorias extras fora dos três contadores principais.
+            if ("SMA".equals(codigo)) d.saques += quantidade;
             else if ("AMO".equals(codigo)) d.amortidas += quantidade;
             else if ("LOB".equals(codigo)) d.lobs += quantidade;
+            // VOL é uma classe válida nova e não pertence a saque, forehand ou backhand.
+            else if ("VOL".equals(codigo)) d.volleios += quantidade;
         }
     }
 
@@ -454,7 +465,8 @@ public class Estatiscas extends BaseActivity {
 
     private int contarGolpesClassificados(HistoricoTreinoEntity h) {
         return Math.max(0, h.saques) + Math.max(0, h.forehands) + Math.max(0, h.backhands)
-                + quantidadeClasse(h, "SMA") + quantidadeClasse(h, "AMO") + quantidadeClasse(h, "LOB");
+                + quantidadeClasse(h, "VOL") + quantidadeClasse(h, "SMA")
+                + quantidadeClasse(h, "AMO") + quantidadeClasse(h, "LOB");
     }
 
     private int quantidadeClasse(HistoricoTreinoEntity h, String codigo) {
@@ -466,9 +478,9 @@ public class Estatiscas extends BaseActivity {
     private String textoRepertorioDetalhado(Dados d) {
         if (d.contagemPorClasse.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
-        String[] codigos = {"SPL", "SSL", "SKK", "SMA", "FHD", "FHS", "FHV", "BHD", "BHS", "BHV", "AMO", "LOB", "RUI"};
-        String[] nomes = {"Saque plano", "Saque slice", "Saque kick", "Smash", "FH drive", "FH slice", "FH voleio",
-                "BH drive", "BH slice", "BH voleio", "Amortida", "Lob", "Ruído/outro"};
+        String[] codigos = {"SAQ", "FHD", "FHS", "BHD", "BHS", "VOL", "AMO", "LOB", "RUI"};
+        String[] nomes = {"Saque / smash", "FH drive", "FH slice", "BH drive", "BH slice", "Voleio",
+                "Amortida (histórico)", "Lob (histórico)", "Ruído/outro"};
         for (int i = 0; i < codigos.length; i++) {
             Integer n = d.contagemPorClasse.get(codigos[i]);
             if (n == null || n <= 0) continue;
@@ -585,7 +597,7 @@ public class Estatiscas extends BaseActivity {
         Map<String, String> nomesDesafios = new HashMap<>();
         final List<HistoricoTreinoEntity> sessoesPontuadas = new ArrayList<>();
         int sessoes, sessoesGuiadas, sessoesLivres, desafiosConcluidos;
-        int saques, forehands, backhands, smashes, amortidas, lobs, totalGolpes, melhorPontuacao, pontosTotais;
+        int saques, forehands, backhands, volleios, amortidas, lobs, totalGolpes, melhorPontuacao, pontosTotais;
         final Map<String, Integer> contagemPorClasse = new HashMap<>();
         int atividadeUltimosSeteDias, atividadeSeteDiasAnteriores;
         int[] sessoesPorDia = new int[7];

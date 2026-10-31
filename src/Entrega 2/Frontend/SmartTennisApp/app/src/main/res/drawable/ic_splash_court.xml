@@ -1,0 +1,50 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="210dp"
+    android:viewportWidth="360"
+    android:viewportHeight="210">
+
+    <!-- Quadra estilizada vista de cima. -->
+    <path
+        android:fillColor="#174B3B"
+        android:pathData="M24,17 L336,17 Q348,17 348,29 L348,181 Q348,193 336,193 L24,193 Q12,193 12,181 L12,29 Q12,17 24,17 Z" />
+    <path
+        android:fillColor="#1D624A"
+        android:pathData="M42,34 L318,34 L318,176 L42,176 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#CDEBDD"
+        android:strokeWidth="2.2"
+        android:pathData="M42,34 L318,34 L318,176 L42,176 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#CDEBDD"
+        android:strokeWidth="2"
+        android:pathData="M180,34 L180,176 M42,105 L318,105 M90,34 L90,176 M270,34 L270,176 M90,70 L270,70 M90,140 L270,140" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E6F4EC"
+        android:strokeWidth="1.5"
+        android:pathData="M180,94 L180,116" />
+
+    <!-- Trajetória e bola de tênis. -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D8EE77"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M218,121 Q244,107 257,82" />
+    <path
+        android:fillColor="#D8EE77"
+        android:pathData="M263,49 m-21,0 a21,21 0,1 0,42 0 a21,21 0,1 0,-42 0" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#F7FFD0"
+        android:strokeWidth="2"
+        android:pathData="M250,32 Q236,48 250,66 M276,32 Q290,48 276,66" />
+
+    <!-- Brilho discreto no centro da quadra. -->
+    <path
+        android:fillColor="#2BFFFFFF"
+        android:pathData="M180,28 m-3,0 a3,3 0,1 0,6 0 a3,3 0,1 0,-6,0" />
+</vector>

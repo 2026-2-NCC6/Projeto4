@@ -39,6 +39,7 @@ public class HomePage extends BaseActivity {
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         TextView welcome = findViewById(R.id.textNomePerfilHome);
+        ImageView perfilTop = findViewById(R.id.imagePerfilHomeBtn);
         executor.execute(() -> {
             Usuario usuario = db.usuarioDAO().getUserById(id);
             runOnUiThread(() -> {
@@ -46,10 +47,10 @@ public class HomePage extends BaseActivity {
                     String mensagemWelcome =
                             getString(R.string.nomeUsuario) + usuario.nome;
                     welcome.setText(mensagemWelcome);
+                    perfilTop.setImageResource(com.example.smarttennisapp.util.AvatarCatalogo.drawableId(usuario.avatarId));
                 }
             });
         });
-        ImageView perfilTop = findViewById(R.id.imagePerfilHomeBtn);
         LinearLayout estatistica = findViewById(R.id.imageButtonEstatisticaHome);
         LinearLayout perfil = findViewById(R.id.imageButtonPerfilHome);
         CardView treinoLivreCard = findViewById(R.id.cardTreinoLivre);

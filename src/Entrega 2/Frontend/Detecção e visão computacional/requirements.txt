@@ -1,0 +1,6 @@
+# Dependências da estação do PC (tracking clássico, sem ML: não precisa de PyTorch/ultralytics).
+numpy>=1.24.0
+opencv-python>=4.8.0
+openpyxl>=3.1.0
+# Só para a interface (o tracker funciona sozinho pela linha de comando):
+streamlit>=1.37.0,<2.0

@@ -1,11 +1,8 @@
 package com.example.smarttennisapp;
 
 import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.VideoView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
@@ -21,25 +18,12 @@ public class MainActivity extends BaseActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // Usuários que já possuem sessão seguem diretamente para a área principal.
         if (SessaoUsuario.temSessao(this)) {
             startActivity(new Intent(this, HomePage.class));
             finish();
             return;
         }
-
-        VideoView videoTennisBall = findViewById(R.id.videoTennisBall);
-        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.placeholder);
-        videoTennisBall.setVideoURI(videoUri);
-        videoTennisBall.setOnPreparedListener(mediaPlayer -> {
-            mediaPlayer.setLooping(true);
-            // Preenche a tela com corte central, sem deformar o vídeo em telas ultrawide.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                mediaPlayer.setVideoScalingMode(
-                        android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
-                );
-            }
-            videoTennisBall.start();
-        });
 
         Button btnEntrar = findViewById(R.id.btnEntrar);
         btnEntrar.setOnClickListener(view -> {
