@@ -51,26 +51,29 @@ Execute o APK e siga as instruções de seu telefone.
 
 <b>Windows/Linux:</b>
 
-Para o modelo de visão computacional:
+# Modelo de visão computacional:
 Rode os comandos a baixo na pasta /src/Entrega 2/Frontend/Detecção e visão computacional/:
 ```sh
 pip install -r requirements.txt
 streamlit run smarttennis_streamlit.py
 ```
-Para a dashboard:
+# Dashboard:
 
-
+Rode os comandos a baixo na pasta /src/Entrega 2/Frontend/Dashboard/:
 ```sh
-Coloque código do prompt de comnando se for necessário
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
 ## 💻 Configuração para Desenvolvimento
 
-Descreva como instalar todas as dependências para desenvolvimento e como rodar um test-suite automatizado de algum tipo. Se necessário, faça isso para múltiplas plataformas.
-
 Para abrir este projeto você necessita das seguintes ferramentas:
 
--<a href="https://godotengine.org/download">GODOT</a>
+-<a href="https://nodejs.org">NODE.JS</a>
+-<a href="https://dev.mysql.com/downloads/installer/">MySQL</a>
+-<a href="https://www.arduino.cc/en/software/">Arduino IDE</a>
+-<a href="https://www.python.org/downloads/">Python 3.15></a>
+-<a href="https://git-scm.com/">Git</a>
 
 ```sh
 make install
