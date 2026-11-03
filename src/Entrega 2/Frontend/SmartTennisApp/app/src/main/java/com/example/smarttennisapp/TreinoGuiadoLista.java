@@ -23,7 +23,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.example.smarttennisapp.backend.SyncManager;
+import com.example.smarttennisapp.backend.BackendApi;
+import com.example.smarttennisapp.backend.SessaoRemota;
 import com.example.smarttennisapp.database.AppDatabase;
 import com.example.smarttennisapp.database.DatabaseProvider;
 import com.example.smarttennisapp.database.DesafioEntity;
@@ -43,6 +48,7 @@ public class TreinoGuiadoLista extends BaseActivity {
 
     private Button btnFiltroTodos;
     private Button btnFiltroOffline;
+    private Button btnFiltroComunidade;
     private ImageButton btnVoltarTreinos;
     private Button btnCriarDesafioLista;
 
@@ -104,6 +110,7 @@ public class TreinoGuiadoLista extends BaseActivity {
 
         btnFiltroTodos = findViewById(R.id.btnFiltroTodos);
         btnFiltroOffline = findViewById(R.id.btnFiltroOffline);
+        btnFiltroComunidade = findViewById(R.id.btnFiltroComunidade);
         btnVoltarTreinos = findViewById(R.id.btnVoltarTreinos);
         btnCriarDesafioLista = findViewById(R.id.btnCriarDesafioLista);
     }
@@ -134,6 +141,9 @@ public class TreinoGuiadoLista extends BaseActivity {
         private final boolean personalizado;
         private boolean usarCamera;
         private final boolean cameraRecomendada;
+        private final boolean daComunidade;
+        private final String autorNome;
+        private final boolean compartilhado;
 
         public Treino(
                 String id,
@@ -144,7 +154,7 @@ public class TreinoGuiadoLista extends BaseActivity {
                 String categoria,
                 String origem
         ) {
-            this(id, nome, descricao, duracaoMinutos, dificuldade, categoria, origem, "", false, false, false);
+            this(id, nome, descricao, duracaoMinutos, dificuldade, categoria, origem, "", false, false, false, false, false, "");
         }
 
         public Treino(
@@ -159,7 +169,7 @@ public class TreinoGuiadoLista extends BaseActivity {
                 boolean personalizado
         ) {
             this(id, nome, descricao, duracaoMinutos, dificuldade, categoria, origem,
-                    sequenciaGolpes, personalizado, false, false);
+                    sequenciaGolpes, personalizado, false, false, false, false, "");
         }
 
         public Treino(
@@ -167,6 +177,17 @@ public class TreinoGuiadoLista extends BaseActivity {
                 String dificuldade, String categoria, String origem,
                 String sequenciaGolpes, boolean personalizado,
                 boolean usarCamera, boolean cameraRecomendada
+        ) {
+            this(id, nome, descricao, duracaoMinutos, dificuldade, categoria, origem,
+                    sequenciaGolpes, personalizado, usarCamera, cameraRecomendada, false, false, "");
+        }
+
+        public Treino(
+                String id, String nome, String descricao, int duracaoMinutos,
+                String dificuldade, String categoria, String origem,
+                String sequenciaGolpes, boolean personalizado,
+                boolean usarCamera, boolean cameraRecomendada,
+                boolean compartilhado, boolean daComunidade, String autorNome
         ) {
             this.id = id;
             this.nome = nome;
@@ -179,6 +200,9 @@ public class TreinoGuiadoLista extends BaseActivity {
             this.personalizado = personalizado;
             this.usarCamera = usarCamera;
             this.cameraRecomendada = cameraRecomendada;
+            this.compartilhado = compartilhado;
+            this.daComunidade = daComunidade;
+            this.autorNome = autorNome == null ? "" : autorNome;
         }
 
         public String getId() {
@@ -220,6 +244,9 @@ public class TreinoGuiadoLista extends BaseActivity {
         public boolean isUsarCamera() { return usarCamera; }
         public void setUsarCamera(boolean valor) { usarCamera = valor; }
         public boolean isCameraRecomendada() { return cameraRecomendada; }
+        public boolean isDaComunidade() { return daComunidade; }
+        public boolean isCompartilhado() { return compartilhado; }
+        public String getAutorNome() { return autorNome; }
 
         public int getQuantidadeEtapas() {
             if (sequenciaGolpes.isEmpty()) return 0;
@@ -262,9 +289,6 @@ public class TreinoGuiadoLista extends BaseActivity {
         adicionarTreinoCatalogo("offline_009", "Saque e Smash",
                 "Treine a categoria combinada de saque e smash reconhecida pelo sensor.",
                 12, "Avançado", "SAQUE / SMASH", "SAQ,SAQ,SAQ,SAQ,SAQ,SAQ");
-        adicionarTreinoCatalogo("offline_010", "Ataque e Jogo de Rede",
-                "Combine saque/smash, voleios e golpes de fundo para treinar mudanças rápidas de ritmo.",
-                12, "Avançado", "REDE E ATAQUE", "SAQ,VOL,FHD,VOL,BHD,VOL");
         adicionarTreinoCatalogo("offline_011", "Variações do Fundo",
                 "Misture drive e slice nos dois lados para desenvolver variedade e leitura do movimento.",
                 14, "Avançado", "VARIAÇÃO", "FHD,FHS,BHD,BHS,FHD,BHD");
@@ -292,6 +316,7 @@ public class TreinoGuiadoLista extends BaseActivity {
         progressoTreinos.setVisibility(View.VISIBLE);
         executor.execute(() -> {
             final List<DesafioEntity> desafios;
+            JSONArray comunidade = new JSONArray();
             try {
                 SyncManager.sincronizarAgora(this, usuarioId);
                 desafios = db.desafioDAO().listarPorUsuario(usuarioId);
@@ -304,6 +329,17 @@ public class TreinoGuiadoLista extends BaseActivity {
                 });
                 return;
             }
+            String token = SessaoRemota.obterToken(getApplicationContext(), usuarioId);
+            if (token != null) {
+                try {
+                    JSONObject respostaComunidade = BackendApi.listarDesafiosCompartilhados(getApplicationContext(), token, 100);
+                    JSONArray recebidos = respostaComunidade.optJSONArray("desafios");
+                    if (recebidos != null) comunidade = recebidos;
+                } catch (Exception erroComunidade) {
+                    android.util.Log.w("TreinoGuiadoLista", "Comunidade indisponível; os treinos locais continuam acessíveis.", erroComunidade);
+                }
+            }
+            final JSONArray desafiosComunidade = comunidade;
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 removerDesafiosPersonalizadosDaLista();
@@ -320,7 +356,33 @@ public class TreinoGuiadoLista extends BaseActivity {
                             desafio.sequenciaGolpes,
                             true,
                             desafio.usaCamera,
-                            false
+                            false,
+                            desafio.compartilhado,
+                            false,
+                            ""
+                    ));
+                }
+                for (int i = 0; i < desafiosComunidade.length(); i++) {
+                    JSONObject remoto = desafiosComunidade.optJSONObject(i);
+                    if (remoto == null) continue;
+                    String idRemoto = remoto.optString("id", "");
+                    if (idRemoto.trim().isEmpty()) continue;
+                    String sequenciaRemota = remoto.optString("sequenciaGolpes", "");
+                    todosTreinos.add(new Treino(
+                            idRemoto,
+                            remoto.optString("nome", "Desafio da comunidade"),
+                            remoto.optString("descricao", ""),
+                            Math.max(1, remoto.optInt("duracaoMinutos", 1)),
+                            remoto.optString("dificuldade", "Iniciante"),
+                            remoto.optString("categoria", "PERSONALIZADO"),
+                            "COMUNIDADE",
+                            sequenciaRemota,
+                            false,
+                            remoto.optBoolean("usaCamera", false),
+                            false,
+                            true,
+                            true,
+                            remoto.optString("autorNome", "Jogador")
                     ));
                 }
                 progressoTreinos.setVisibility(View.GONE);
@@ -346,7 +408,7 @@ public class TreinoGuiadoLista extends BaseActivity {
 
     private void removerDesafiosPersonalizadosDaLista() {
         for (int i = todosTreinos.size() - 1; i >= 0; i--) {
-            if (todosTreinos.get(i).isPersonalizado()) {
+            if (todosTreinos.get(i).isPersonalizado() || todosTreinos.get(i).isDaComunidade()) {
                 todosTreinos.remove(i);
             }
         }
@@ -374,6 +436,11 @@ public class TreinoGuiadoLista extends BaseActivity {
             atualizarLista();
         });
 
+        btnFiltroComunidade.setOnClickListener(v -> {
+            filtroOrigem = "COMUNIDADE";
+            atualizarEstiloFiltros();
+            atualizarLista();
+        });
 
         atualizarEstiloFiltros();
     }
@@ -382,6 +449,7 @@ public class TreinoGuiadoLista extends BaseActivity {
 
         estilizarFiltro(btnFiltroTodos, filtroOrigem.equals("TODOS"));
         estilizarFiltro(btnFiltroOffline, filtroOrigem.equals("PERSONALIZADO"));
+        estilizarFiltro(btnFiltroComunidade, filtroOrigem.equals("COMUNIDADE"));
     }
 
     private void estilizarFiltro(Button botao, boolean selecionado) {
@@ -459,7 +527,8 @@ public class TreinoGuiadoLista extends BaseActivity {
         for (Treino treino : todosTreinos) {
 
             boolean correspondeOrigem = filtroOrigem.equals("TODOS")
-                    || (filtroOrigem.equals("PERSONALIZADO") && treino.isPersonalizado());
+                    || (filtroOrigem.equals("PERSONALIZADO") && treino.isPersonalizado())
+                    || (filtroOrigem.equals("COMUNIDADE") && treino.isDaComunidade());
 
             String nome = treino.getNome().toLowerCase(Locale.ROOT);
             String descricao = treino.getDescricao().toLowerCase(Locale.ROOT);
@@ -495,7 +564,9 @@ public class TreinoGuiadoLista extends BaseActivity {
         if (listaVazia) {
             txtListaVazia.setText(filtroOrigem.equals("PERSONALIZADO")
                     ? "Você ainda não criou desafios. Use um preset ou monte sua própria sequência."
-                    : "Nenhum treino encontrado. Tente outra busca.");
+                    : (filtroOrigem.equals("COMUNIDADE")
+                        ? "Nenhum desafio compartilhado encontrado. Entre online ou volte mais tarde para explorar a comunidade."
+                        : "Nenhum treino encontrado. Tente outra busca."));
         }
     }
 
@@ -553,7 +624,11 @@ public class TreinoGuiadoLista extends BaseActivity {
             holder.txtDificuldade.setText(treino.getDificuldade());
             holder.txtEtapas.setText("🎾 " + treino.getQuantidadeEtapas() + " etapas · IoT Bluetooth");
             holder.txtCategoria.setText(treino.getCategoria());
-            holder.txtOrigem.setText(treino.isPersonalizado() ? "MEU DESAFIO" : treino.getOrigem());
+            holder.txtOrigem.setText(treino.isDaComunidade()
+                    ? "COMUNIDADE · " + treino.getAutorNome()
+                    : (treino.isPersonalizado()
+                        ? (treino.isCompartilhado() ? "MEU DESAFIO · PÚBLICO" : "MEU DESAFIO")
+                        : treino.getOrigem()));
             holder.switchCamera.setOnCheckedChangeListener(null);
             holder.switchCamera.setChecked(treino.isUsarCamera());
             holder.switchCamera.setText("Usar câmeras · " + nomeModoCamera(treino.getCategoria()));

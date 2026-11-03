@@ -18,6 +18,9 @@ public final class InicioTreinoOverlay {
     private boolean executando;
     private int etapa;
     private Runnable aoConcluir;
+    private EtapaListener listenerEtapa;
+
+    public interface EtapaListener { void aoExibir(String numero, int indice); }
 
     private final Runnable avancar = this::avancarEtapa;
 
@@ -40,11 +43,16 @@ public final class InicioTreinoOverlay {
     }
 
     public void start(Runnable callback) {
+        start(null, callback);
+    }
+
+    public void start(EtapaListener listener, Runnable callback) {
         if (executando) return;
 
         executando = true;
         etapa = 0;
         aoConcluir = callback;
+        listenerEtapa = listener;
         overlay.setVisibility(View.VISIBLE);
         overlay.setAlpha(0f);
         overlay.animate().cancel();
@@ -70,6 +78,7 @@ public final class InicioTreinoOverlay {
             overlay.setAlpha(1f);
             Runnable callback = aoConcluir;
             aoConcluir = null;
+            listenerEtapa = null;
             if (callback != null) callback.run();
         }).start();
     }
@@ -81,6 +90,7 @@ public final class InicioTreinoOverlay {
                 ? Color.rgb(102, 209, 158)
                 : Color.rgb(255, 200, 87));
         mensagem.setText(MENSAGENS[etapa]);
+        if (listenerEtapa != null) listenerEtapa.aoExibir(NUMEROS[etapa], etapa);
         numero.setScaleX(0.72f);
         numero.setScaleY(0.72f);
         numero.setAlpha(0.45f);
@@ -97,6 +107,7 @@ public final class InicioTreinoOverlay {
         handler.removeCallbacks(avancar);
         executando = false;
         aoConcluir = null;
+        listenerEtapa = null;
         overlay.animate().cancel();
         numero.animate().cancel();
         overlay.setAlpha(1f);

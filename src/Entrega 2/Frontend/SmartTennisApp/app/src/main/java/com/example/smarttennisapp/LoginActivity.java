@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Toast;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -59,6 +60,8 @@ public class LoginActivity extends BaseActivity {
             }
 
             btnEntrar.setEnabled(false);
+            btnCadastroLogin.setEnabled(false);
+            mostrarCarregamento(true);
             executor.execute(() -> {
                 try {
                     JSONObject authRemota = null;
@@ -173,10 +176,22 @@ public class LoginActivity extends BaseActivity {
         }
     }
 
+    private void mostrarCarregamento(boolean mostrar) {
+        View indicador = findViewById(R.id.layoutCarregamentoLogin);
+        if (indicador != null) indicador.setVisibility(mostrar ? View.VISIBLE : View.GONE);
+        Button entrar = findViewById(R.id.btnEntrarLogin);
+        Button cadastrar = findViewById(R.id.btnCadastrarLogin);
+        if (entrar != null) entrar.setEnabled(!mostrar);
+        if (cadastrar != null) cadastrar.setEnabled(!mostrar);
+    }
+
     private void mostrarErroLogin(String mensagem) {
         runOnUiThread(() -> {
             Button btnEntrar = findViewById(R.id.btnEntrarLogin);
             if (btnEntrar != null) btnEntrar.setEnabled(true);
+            Button btnCadastro = findViewById(R.id.btnCadastrarLogin);
+            if (btnCadastro != null) btnCadastro.setEnabled(true);
+            mostrarCarregamento(false);
             if (!isFinishing() && !isDestroyed()) {
                 Toast.makeText(this, mensagem, Toast.LENGTH_LONG).show();
             }
@@ -187,6 +202,9 @@ public class LoginActivity extends BaseActivity {
         runOnUiThread(() -> {
             Button btnEntrar = findViewById(R.id.btnEntrarLogin);
             if (btnEntrar != null) btnEntrar.setEnabled(true);
+            Button btnCadastro = findViewById(R.id.btnCadastrarLogin);
+            if (btnCadastro != null) btnCadastro.setEnabled(true);
+            mostrarCarregamento(false);
             if (isFinishing() || isDestroyed()) return;
             if (aviso != null) Toast.makeText(this, aviso, Toast.LENGTH_LONG).show();
             if (SessaoUsuario.temSessao(this)) {

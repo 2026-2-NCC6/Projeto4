@@ -47,8 +47,10 @@ CREATE TABLE IF NOT EXISTS desafio_personalizado (
   bolas_alvo INT UNSIGNED NOT NULL DEFAULT 0,
   usa_camera TINYINT(1) NOT NULL DEFAULT 0,
   excluido TINYINT(1) NOT NULL DEFAULT 0,
+  compartilhado TINYINT(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY idx_desafio_usuario_atualizado (usuario_id, atualizado_em_ms),
+  KEY idx_desafio_publico (compartilhado, excluido, atualizado_em_ms),
   CONSTRAINT fk_desafio_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -79,6 +81,32 @@ CREATE TABLE IF NOT EXISTS historico_treino (
   KEY idx_historico_usuario_data (usuario_id, data_conclusao_ms),
   KEY idx_historico_ranking (concluido, treino_id, usuario_id, pontuacao, tempo_segundos),
   CONSTRAINT fk_historico_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+-- Codigos temporarios: um por usuario, oito digitos, validade de cinco minutos.
+CREATE TABLE IF NOT EXISTS codigo_amizade (
+  codigo CHAR(8) NOT NULL,
+  usuario_id INT UNSIGNED NOT NULL,
+  expira_em_ms BIGINT NOT NULL,
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (codigo),
+  UNIQUE KEY uq_codigo_amizade_usuario (usuario_id),
+  KEY idx_codigo_amizade_expira (expira_em_ms),
+  CONSTRAINT fk_codigo_amizade_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Relacoes armazenadas com os IDs em ordem para impedir amizades duplicadas.
+CREATE TABLE IF NOT EXISTS amizade (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  usuario_a_id INT UNSIGNED NOT NULL,
+  usuario_b_id INT UNSIGNED NOT NULL,
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_amizade_par (usuario_a_id, usuario_b_id),
+  KEY idx_amizade_b (usuario_b_id),
+  CONSTRAINT fk_amizade_usuario_a FOREIGN KEY (usuario_a_id) REFERENCES usuario(id) ON DELETE CASCADE,
+  CONSTRAINT fk_amizade_usuario_b FOREIGN KEY (usuario_b_id) REFERENCES usuario(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Tabela antiga de progresso por exercicio, mantida para evolucao futura.

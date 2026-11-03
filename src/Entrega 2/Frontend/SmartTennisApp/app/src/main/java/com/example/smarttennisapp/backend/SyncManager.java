@@ -94,6 +94,7 @@ public final class SyncManager {
         json.put("bolasAlvo", d.bolasAlvo);
         json.put("usaCamera", d.usaCamera);
         json.put("excluido", d.excluido);
+        json.put("compartilhado", d.compartilhado);
         return json;
     }
 
@@ -148,6 +149,7 @@ public final class SyncManager {
                         json.optBoolean("usaCamera", false)
                 );
                 remoto.excluido = json.optBoolean("excluido", false);
+                remoto.compartilhado = json.optBoolean("compartilhado", false);
                 db.desafioDAO().salvar(remoto);
             }
         }

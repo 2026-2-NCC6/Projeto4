@@ -3,7 +3,7 @@ package com.example.smarttennisapp.jogo;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Parser das linhas de classificação emitidas pelo detector_golpes v2 (7 classes). */
+/** Parser das linhas de classificação do detector, aceitando apenas as classes atuais do app. */
 public final class ParserRaquete {
     /** Inclui a janela de captura do firmware e a latência normal do Bluetooth SPP. */
     public static final long ATRASO_FIRMWARE_MS = 800;
@@ -11,8 +11,8 @@ public final class ParserRaquete {
     private static final Pattern RECONHECIDO = Pattern.compile(
             ">>\\s*(SAQUE\\s*/\\s*SMASH|SAQUE\\s+SMASH|SAQUE\\s+PLANO|" +
             "SAQUE\\s+SLICE|SAQUE\\s+KICK|SMASH|SAQUE|" +
-            "FH\\s+DRIVE|FH\\s+SLICE|FH\\s+VOLEIO|" +
-            "BH\\s+DRIVE|BH\\s+SLICE|BH\\s+VOLEIO|VOLEIO|" +
+            "FH\\s+DRIVE|FH\\s+SLICE|" +
+            "BH\\s+DRIVE|BH\\s+SLICE|" +
             "RUIDO\\s*/\\s*OUTRO|FOREHAND|BACKHAND)\\s+(\\d{1,3})\\s*%",
             Pattern.CASE_INSENSITIVE);
     private static final Pattern DESCONHECIDO = Pattern.compile(

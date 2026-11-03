@@ -4,9 +4,9 @@ package com.example.smarttennisapp.jogo;
 public final class SwingEvento {
     public static final String INDEFINIDO = "?";
 
-    /** Família: SAQUE/SMASH, FOREHAND, BACKHAND, VOLEIO, OUTRO ou "?". */
+    /** Família: SAQUE/SMASH, FOREHAND, BACKHAND, OUTRO ou "?". */
     public final String golpe;
-    /** Código interno: SAQ, FHD, FHS, BHD, BHS, VOL, RUI ou "?". */
+    /** Código interno: SAQ, FHD, FHS, BHD, BHS, RUI ou "?". */
     public final String codigoClasse;
     public final String nomeClasse;
     public final int confiancaPct;

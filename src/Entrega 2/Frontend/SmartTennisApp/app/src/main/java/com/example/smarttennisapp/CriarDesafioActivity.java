@@ -38,12 +38,12 @@ public class CriarDesafioActivity extends BaseActivity {
     // Metas genéricas e classes disponíveis no detector ESP32 atual.
     private static final String[] GOLPES = {
             "SAQUE", "FOREHAND", "BACKHAND",
-            "SAQ", "FHD", "FHS", "BHD", "BHS", "VOL"
+            "SAQ", "FHD", "FHS", "BHD", "BHS"
     };
     private static final String[] NOMES_GOLPES = {
             "Saque / smash · categoria combinada", "Forehand · drive ou slice", "Backhand · drive ou slice",
             "Saque / smash", "Forehand drive", "Forehand slice",
-            "Backhand drive", "Backhand slice", "Voleio"
+            "Backhand drive", "Backhand slice"
     };
     private static final String[] DIFICULDADES = {"Iniciante", "Intermediário", "Avançado"};
 
@@ -58,6 +58,7 @@ public class CriarDesafioActivity extends BaseActivity {
     private Button btnRemover;
     private Button btnSalvar;
     private SwitchCompat switchUsarCamera;
+    private SwitchCompat switchCompartilhar;
 
     private final ArrayList<String> sequencia = new ArrayList<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -108,6 +109,7 @@ public class CriarDesafioActivity extends BaseActivity {
         btnRemover = findViewById(R.id.btnRemoverEtapaDesafio);
         btnSalvar = findViewById(R.id.btnSalvarDesafio);
         switchUsarCamera = findViewById(R.id.switchUsarCameraDesafio);
+        switchCompartilhar = findViewById(R.id.switchCompartilharDesafio);
     }
 
     private void configurarSpinners() {
@@ -252,6 +254,7 @@ public class CriarDesafioActivity extends BaseActivity {
                 edtDuracao.setText(String.valueOf(desafio.duracaoMinutos));
                 criadoEm = desafio.criadoEm;
                 switchUsarCamera.setChecked(desafio.usaCamera);
+                switchCompartilhar.setChecked(desafio.compartilhado);
                 if (desafio.dificuldade != null) {
                     for (int i = 0; i < DIFICULDADES.length; i++) {
                         if (DIFICULDADES[i].equalsIgnoreCase(desafio.dificuldade)) {
@@ -333,6 +336,7 @@ public class CriarDesafioActivity extends BaseActivity {
                 0,
                 switchUsarCamera.isChecked()
         );
+        desafio.compartilhado = switchCompartilhar.isChecked();
 
         btnSalvar.setEnabled(false);
         executor.execute(() -> {

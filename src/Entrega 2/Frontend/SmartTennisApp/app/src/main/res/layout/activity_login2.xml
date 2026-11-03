@@ -158,6 +158,34 @@
                     android:textStyle="bold"
                     app:cornerRadius="14dp" />
 
+                <LinearLayout
+                    android:id="@+id/layoutCarregamentoLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ProgressBar
+                        android:id="@+id/progressoLoginServidor"
+                        style="?android:attr/progressBarStyle"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:indeterminate="true"
+                        android:indeterminateTint="@color/accent" />
+
+                    <TextView
+                        android:id="@+id/txtCarregamentoLogin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="Conectando ao servidor..."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
                 <Button
                     android:id="@+id/btnCadastrarLogin"
                     android:layout_width="match_parent"

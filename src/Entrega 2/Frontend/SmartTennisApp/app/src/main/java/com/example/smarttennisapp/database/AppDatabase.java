@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
                 HistoricoTreinoEntity.class,
                 DesafioEntity.class
         },
-        version = 8,
+        version = 9,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -97,6 +97,14 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("ALTER TABLE `Usuario` ADD COLUMN `avatarId` TEXT NOT NULL DEFAULT 'avatar_01'");
+        }
+    };
+
+    /** Permite compartilhar desafios personalizados; desligado para todos os registros antigos. */
+    public static final Migration MIGRATION_8_9 = new Migration(8, 9) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `desafios_personalizados` ADD COLUMN `compartilhado` INTEGER NOT NULL DEFAULT 0");
         }
     };
 

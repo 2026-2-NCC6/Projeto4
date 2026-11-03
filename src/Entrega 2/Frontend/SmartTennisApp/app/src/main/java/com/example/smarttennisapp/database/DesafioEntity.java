@@ -42,6 +42,10 @@ public class DesafioEntity {
     @ColumnInfo(defaultValue = "0")
     public boolean excluido = false;
 
+    /** Publica o desafio na vitrine de desafios da comunidade quando sincronizado. */
+    @ColumnInfo(defaultValue = "0")
+    public boolean compartilhado = false;
+
     public DesafioEntity(
             @NonNull String id, int usuarioId, String nome, String descricao,
             int duracaoMinutos, String dificuldade, String categoria,

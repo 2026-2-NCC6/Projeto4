@@ -19,6 +19,8 @@ import androidx.activity.EdgeToEdge;
 import androidx.core.app.ActivityCompat;
 
 import com.example.smarttennisapp.util.BluetoothRaqueteUtil;
+import com.example.smarttennisapp.util.ControleVoz;
+import com.example.smarttennisapp.util.AudioFeedbackTreino;
 import com.example.smarttennisapp.util.SessaoUsuario;
 import com.example.smarttennisapp.backend.SyncManager;
 import com.example.smarttennisapp.database.DatabaseProvider;
@@ -73,6 +75,9 @@ public class TreinoLivre extends BaseActivity {
 
     private Button btnIniciarTreino;
     private Button btnPararTreino;
+    private Button btnControleVoz;
+    private ControleVoz controleVoz;
+    private AudioFeedbackTreino audioFeedback;
     private InicioTreinoOverlay sinalInicioTreino;
     private boolean contagemInicioAtiva = false;
 
@@ -122,6 +127,8 @@ public class TreinoLivre extends BaseActivity {
                 findViewById(R.id.txtStartSignalMensagem)
         );
         configurarBotoes();
+        audioFeedback = new AudioFeedbackTreino(this);
+        configurarControleVoz();
         atualizarEstadoConexao(false);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -177,6 +184,7 @@ public class TreinoLivre extends BaseActivity {
 
         btnIniciarTreino = findViewById(R.id.btnIniciarTreino);
         btnPararTreino = findViewById(R.id.btnPararTreino);
+        btnControleVoz = findViewById(R.id.btnControleVozLivre);
     }
 
     private void configurarBotoes() {
@@ -185,6 +193,25 @@ public class TreinoLivre extends BaseActivity {
         btnIniciarTreino.setOnClickListener(v -> iniciarTreino());
 
         btnPararTreino.setOnClickListener(v -> pararTreino());
+    }
+
+    private void configurarControleVoz() {
+        if (btnControleVoz == null) return;
+        controleVoz = new ControleVoz(this, btnControleVoz, new ControleVoz.Listener() {
+            @Override public void aoIniciarTreino() {
+                if (!treinoAtivo && !contagemInicioAtiva) iniciarTreino();
+            }
+            @Override public void aoPararTreino() {
+                if (contagemInicioAtiva) {
+                    sinalInicioTreino.cancel();
+                    contagemInicioAtiva = false;
+                    btnIniciarTreino.setEnabled(conectado);
+                    if (audioFeedback != null) audioFeedback.falar("Contagem cancelada.");
+                } else if (treinoAtivo) {
+                    pararTreino();
+                }
+            }
+        });
     }
 
     private boolean temPermissaoBluetooth() {
@@ -220,6 +247,7 @@ public class TreinoLivre extends BaseActivity {
                 permissions,
                 grantResults
         );
+        if (controleVoz != null) controleVoz.tratarResultadoPermissao(requestCode, grantResults);
 
         if (requestCode == REQUEST_BLUETOOTH_CONNECT) {
             if (grantResults.length > 0
@@ -428,7 +456,14 @@ public class TreinoLivre extends BaseActivity {
         // Sinaliza visualmente o início e só liga o cronômetro ao terminar a contagem.
         contagemInicioAtiva = true;
         btnIniciarTreino.setEnabled(false);
-        sinalInicioTreino.start(() -> {
+        sinalInicioTreino.start((numero, indice) -> {
+            if (audioFeedback != null) {
+                if (indice == 0) audioFeedback.falar("Três.");
+                else if (indice == 1) audioFeedback.falar("Dois.");
+                else if (indice == 2) audioFeedback.falar("Um.");
+                else audioFeedback.falar("Vai!");
+            }
+        }, () -> {
             contagemInicioAtiva = false;
             if (!conectado || encerrando) {
                 atualizarEstadoConexao(false);
@@ -467,6 +502,7 @@ public class TreinoLivre extends BaseActivity {
         treinoAtivo = true;
 
         atualizarEstadoTreino(true);
+        if (audioFeedback != null) audioFeedback.falar("Treino livre iniciado. Execute seus golpes.");
 
         btnIniciarTreino.setEnabled(false);
         btnPararTreino.setEnabled(true);
@@ -485,6 +521,7 @@ public class TreinoLivre extends BaseActivity {
         tempoAcumuladoMs += Math.max(0L, System.currentTimeMillis() - inicioTreinoMs);
         treinoAtivo = false;
         salvarHistoricoTreinoLivre(true);
+        if (audioFeedback != null) audioFeedback.falar("Treino livre finalizado.");
 
         handler.removeCallbacks(atualizarCronometro);
 
@@ -572,12 +609,13 @@ public class TreinoLivre extends BaseActivity {
         }
 
         // O firmware v2 envia, por exemplo:
-        // Exemplos do detector atual: >> SAQUE/SMASH 85%, >> VOLEIO 88%, >> FH DRIVE 85%.
+        // Exemplos aceitos: >> SAQUE/SMASH 85%, >> FH DRIVE 85%, >> BH SLICE 85%.
         // Rejeições: ??? nao identificado (perto de FHD, d=...).
         SwingEvento evento = ParserRaquete.parse(linha, System.currentTimeMillis());
         if (evento != null) {
             registroGolpes.registrar(evento);
-            if (!evento.temClasseIdentificada()) {
+            if (!evento.temClasseIdentificada() || !evento.reconhecido()) {
+                if (audioFeedback != null) { audioFeedback.erro(); audioFeedback.falar("Golpe não identificado."); }
                 totalNaoIdentificados++;
                 txtUltimoGolpe.setText("Golpe não identificado");
                 txtConfianca.setText("Confiança: --");
@@ -586,12 +624,13 @@ public class TreinoLivre extends BaseActivity {
                 txtVelocidadeAngular.setText(evento.velRaqueteKmh > 0
                         ? String.format(java.util.Locale.getDefault(), "%.0f km/h", evento.velRaqueteKmh) : "-- km/h");
             } else {
+                if (audioFeedback != null) { audioFeedback.sucesso(); audioFeedback.falar(evento.nomeClasse + "."); }
                 switch (evento.golpe) {
                     case "SAQUE/SMASH":
                     case "SAQUE": totalSaques++; break;
                     case "FOREHAND": totalForehands++; break;
                     case "BACKHAND": totalBackhands++; break;
-                    default: break; // Voleio e ruído são detalhados no registro por classe.
+                    default: break; // Ruído/outro é detalhado no registro por classe.
                 }
                 txtUltimoGolpe.setText(evento.nomeClasse);
                 txtConfianca.setText(evento.confiancaPct > 0
@@ -721,8 +760,17 @@ public class TreinoLivre extends BaseActivity {
     }
 
     @Override
+    protected void onPause() {
+        // Não mantém o microfone ativo quando a tela de treino sai de primeiro plano.
+        if (controleVoz != null && controleVoz.estaOuvindo()) controleVoz.pararEscuta();
+        super.onPause();
+    }
+
+    @Override
     protected void onDestroy() {
         if (sinalInicioTreino != null) sinalInicioTreino.cancel();
+        if (controleVoz != null) controleVoz.liberar();
+        if (audioFeedback != null) audioFeedback.close();
         if (treinoAtivo) {
             tempoAcumuladoMs += Math.max(
                     0L, System.currentTimeMillis() - inicioTreinoMs

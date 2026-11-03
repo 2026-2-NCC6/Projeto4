@@ -13,6 +13,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -56,6 +58,9 @@ public class RankingActivity extends BaseActivity {
     private LinearLayout containerMinhaPosicao;
     private ProgressBar progresso;
     private Button btnAtualizar;
+    private Button btnRankingTodos;
+    private Button btnRankingAmigos;
+    private boolean somenteAmigos = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,10 +85,27 @@ public class RankingActivity extends BaseActivity {
         containerMinhaPosicao = findViewById(R.id.containerMinhaPosicaoRanking);
         progresso = findViewById(R.id.progressoRanking);
         btnAtualizar = findViewById(R.id.btnAtualizarRanking);
+        btnRankingTodos = findViewById(R.id.btnRankingTodos);
+        btnRankingAmigos = findViewById(R.id.btnRankingAmigos);
 
         ImageButton voltar = findViewById(R.id.btnVoltarRanking);
         voltar.setOnClickListener(v -> finish());
         btnAtualizar.setOnClickListener(v -> carregarRanking());
+        btnRankingTodos.setOnClickListener(v -> {
+            if (somenteAmigos) {
+                somenteAmigos = false;
+                atualizarEstiloFiltro();
+                carregarRanking();
+            }
+        });
+        btnRankingAmigos.setOnClickListener(v -> {
+            if (!somenteAmigos) {
+                somenteAmigos = true;
+                atualizarEstiloFiltro();
+                carregarRanking();
+            }
+        });
+        atualizarEstiloFiltro();
 
         if (modoDesafio) {
             txtTitulo.setText(desafioNome.isEmpty() ? "Ranking do desafio" : "Ranking do desafio");
@@ -99,6 +121,17 @@ public class RankingActivity extends BaseActivity {
             txtListaTitulo.setText("CLASSIFICAÇÃO GERAL");
         }
         carregarRanking();
+    }
+
+    private void atualizarEstiloFiltro() {
+        btnRankingTodos.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                ContextCompat.getColor(this, somenteAmigos ? R.color.surface_secondary : R.color.accent)));
+        btnRankingTodos.setTextColor(ContextCompat.getColor(this,
+                somenteAmigos ? R.color.text_primary : R.color.accent_text));
+        btnRankingAmigos.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                ContextCompat.getColor(this, somenteAmigos ? R.color.accent : R.color.surface_secondary)));
+        btnRankingAmigos.setTextColor(ContextCompat.getColor(this,
+                somenteAmigos ? R.color.accent_text : R.color.text_primary));
     }
 
     private void carregarRanking() {
@@ -119,8 +152,8 @@ public class RankingActivity extends BaseActivity {
                 SyncManager.sincronizarAgora(getApplicationContext(), localId);
                 token = SessaoRemota.obterToken(getApplicationContext(), localId);
                 JSONObject resposta = modoDesafio
-                        ? BackendApi.obterRankingDesafio(getApplicationContext(), token, desafioId, desafioNome, 50)
-                        : BackendApi.obterRankingGlobal(getApplicationContext(), token, 50);
+                        ? BackendApi.obterRankingDesafio(getApplicationContext(), token, desafioId, desafioNome, 50, somenteAmigos)
+                        : BackendApi.obterRankingGlobal(getApplicationContext(), token, 50, somenteAmigos);
                 JSONObject finalResposta = resposta;
                 runOnUiThread(() -> mostrarRanking(finalResposta, localId));
             } catch (IOException e) {
@@ -144,7 +177,8 @@ public class RankingActivity extends BaseActivity {
         }
         JSONObject meuRanking = resposta.optJSONObject("meuRanking");
         int total = resposta.optInt("totalJogadores", ranking.size());
-        txtTotal.setText(total + (total == 1 ? " jogador classificado" : " jogadores classificados"));
+        txtTotal.setText(total + (total == 1 ? " jogador classificado" : " jogadores classificados")
+                + (somenteAmigos ? " · entre amigos" : ""));
 
         if (meuRanking != null) {
             int posicao = meuRanking.optInt("posicao", 0);
@@ -169,9 +203,13 @@ public class RankingActivity extends BaseActivity {
         containerMinhaPosicao.removeAllViews();
         txtMinhaPosicaoTitulo.setVisibility(View.GONE);
         txtVazio.setVisibility(ranking.isEmpty() ? View.VISIBLE : View.GONE);
-        txtVazio.setText(modoDesafio
-                ? "Ainda não há resultados sincronizados para este desafio. Complete uma sessão e sincronize para iniciar o ranking."
-                : "Ainda não há sessões concluídas sincronizadas. Complete um treino guiado para inaugurar o ranking global.");
+        txtVazio.setText(somenteAmigos
+                ? (modoDesafio
+                    ? "Nenhum amigo concluiu este desafio ainda. Quando alguém da sua rede jogar, o resultado aparecerá aqui."
+                    : "Nenhum resultado seu ou dos seus amigos foi sincronizado. Convide jogadores para começar a competir.")
+                : (modoDesafio
+                    ? "Ainda não há resultados sincronizados para este desafio. Complete uma sessão e sincronize para iniciar o ranking."
+                    : "Ainda não há sessões concluídas sincronizadas. Complete um treino guiado para inaugurar o ranking global."));
         txtPodioTitulo.setVisibility(ranking.isEmpty() ? View.GONE : View.VISIBLE);
         containerPodio.setVisibility(ranking.isEmpty() ? View.GONE : View.VISIBLE);
         txtListaTitulo.setVisibility(ranking.isEmpty() ? View.GONE : View.VISIBLE);

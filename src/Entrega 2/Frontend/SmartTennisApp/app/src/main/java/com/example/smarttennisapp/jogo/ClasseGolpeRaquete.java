@@ -3,30 +3,29 @@ package com.example.smarttennisapp.jogo;
 import java.text.Normalizer;
 import java.util.Locale;
 
-/** Catálogo único das sete classes emitidas pelo detector ESP32 atual. */
+/** Classes de golpe aceitas pelo aplicativo: saque, forehand, backhand e ruído/outro. */
 public final class ClasseGolpeRaquete {
     public static final String INDEFINIDO = "?";
     public static final String NAO_IDENTIFICADO = "NAO_IDENTIFICADO";
 
     /** Códigos curtos internos usados pelo app e enviados ao backend. */
     public static final String[] CODIGOS = {
-            "SAQ", "FHD", "FHS", "BHD", "BHS", "VOL", "RUI"
+            "SAQ", "FHD", "FHS", "BHD", "BHS", "RUI"
     };
     public static final String[] NOMES = {
             "Saque / smash", "Forehand drive", "Forehand slice", "Backhand drive",
-            "Backhand slice", "Voleio", "Ruído / outro"
+            "Backhand slice", "Ruído / outro"
     };
     /** Família usada para contadores e para metas genéricas de treino. */
     public static final String[] FAMILIAS = {
-            "SAQUE/SMASH", "FOREHAND", "FOREHAND", "BACKHAND", "BACKHAND", "VOLEIO", "OUTRO"
+            "SAQUE/SMASH", "FOREHAND", "FOREHAND", "BACKHAND", "BACKHAND", "OUTRO"
     };
 
     private ClasseGolpeRaquete() { }
 
     /**
-     * Converte os nomes emitidos pelo firmware atual e aliases de versões anteriores.
-     * SPL/SSL/SKK/SMA foram unificados em SAQ; FHV/BHV foram unificados em VOL.
-     * AMO e LOB não possuem equivalente confiável nas novas classes e são rejeitados.
+     * Converte somente as classes atualmente aceitas pelo aplicativo.
+     * Categorias removidas são rejeitadas e não entram na pontuação nem no histórico novo.
      */
     public static String normalizarToken(String valor) {
         if (valor == null) return null;
@@ -54,19 +53,10 @@ public final class ClasseGolpeRaquete {
             return "SAQ";
         }
 
-        // O firmware atual não determina se o voleio foi de forehand ou backhand.
-        if (chave.equals("FH VOLEIO") || chave.equals("BH VOLEIO")
-                || chave.equals("FOREHAND VOLEIO") || chave.equals("BACKHAND VOLEIO")
-                || chave.equals("FOREHAND VOLLEY") || chave.equals("BACKHAND VOLLEY")
-                || chave.equals("FHV") || chave.equals("BHV")) {
-            return "VOL";
-        }
-
         if (chave.equals("FOREHAND DRIVE")) return "FHD";
         if (chave.equals("FOREHAND SLICE")) return "FHS";
         if (chave.equals("BACKHAND DRIVE")) return "BHD";
         if (chave.equals("BACKHAND SLICE")) return "BHS";
-        if (chave.equals("VOLEIO") || chave.equals("VOLLEY")) return "VOL";
 
         if (chave.equals("RUIDO") || chave.equals("OUTRO") || chave.equals("RUIDO OUTRO")) return "RUI";
 
@@ -134,7 +124,6 @@ public final class ClasseGolpeRaquete {
             case "FHS": return "FH SLICE";
             case "BHD": return "BH DRIVE";
             case "BHS": return "BH SLICE";
-            case "VOL": return "VOLEIO";
             case "RUI": return "RUIDO/OUTRO";
             default: return NOMES[i].toUpperCase(Locale.ROOT);
         }

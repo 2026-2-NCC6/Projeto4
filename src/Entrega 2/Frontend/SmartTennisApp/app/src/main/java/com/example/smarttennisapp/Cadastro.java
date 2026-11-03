@@ -97,6 +97,7 @@ public class Cadastro extends BaseActivity {
             }
 
             btnCadastro.setEnabled(false);
+            mostrarCarregamento(true);
             final String avatarIdCadastro = avatarSelecionadoId;
             executor.execute(() -> {
                 try {
@@ -247,10 +248,18 @@ public class Cadastro extends BaseActivity {
         return (int) (valor * getResources().getDisplayMetrics().density + 0.5f);
     }
 
+    private void mostrarCarregamento(boolean mostrar) {
+        View indicador = findViewById(R.id.layoutCarregamentoCadastro);
+        if (indicador != null) indicador.setVisibility(mostrar ? View.VISIBLE : View.GONE);
+        Button botao = findViewById(R.id.btnCadastroCadastro);
+        if (botao != null) botao.setEnabled(!mostrar);
+    }
+
     private void concluirCadastro(Button btnCadastro, String aviso, boolean sucesso) {
         runOnUiThread(() -> {
             if (isFinishing() || isDestroyed()) return;
             btnCadastro.setEnabled(true);
+            mostrarCarregamento(false);
             if (aviso != null && !aviso.isEmpty()) Toast.makeText(this, aviso, Toast.LENGTH_LONG).show();
             if (sucesso) {
                 startActivity(new Intent(this, HomePage.class));

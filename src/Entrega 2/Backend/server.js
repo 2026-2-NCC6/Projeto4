@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 
 const PORT = Number(process.env.PORT || 5001);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -57,6 +58,22 @@ const authLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.', code: 'RATE_LIMIT' }
+});
+
+const friendsCodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 8,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Muitas solicitacoes de codigo. Aguarde alguns minutos.', code: 'FRIEND_CODE_RATE_LIMIT' }
+});
+
+const friendsRedeemLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Muitas tentativas de codigo. Aguarde alguns minutos.', code: 'FRIEND_REDEEM_RATE_LIMIT' }
 });
 
 function asyncRoute(handler) {
@@ -197,7 +214,8 @@ function challengeFromRow(row) {
     velocidadeAlvoKmh: Number(row.velocidade_alvo_kmh || 0),
     bolasAlvo: Number(row.bolas_alvo || 0),
     usaCamera: Boolean(row.usa_camera),
-    excluido: Boolean(row.excluido)
+    excluido: Boolean(row.excluido),
+    compartilhado: Boolean(row.compartilhado)
   };
 }
 
@@ -227,7 +245,7 @@ async function getSnapshot(userId) {
   const [challengeRows] = await pool.execute(
     `SELECT id, nome, descricao, duracao_minutos, dificuldade, categoria,
             sequencia_golpes, criado_em_ms, atualizado_em_ms,
-            velocidade_alvo_kmh, bolas_alvo, usa_camera, excluido
+            velocidade_alvo_kmh, bolas_alvo, usa_camera, excluido, compartilhado
        FROM desafio_personalizado WHERE usuario_id = ?
        ORDER BY atualizado_em_ms ASC, id ASC`, [userId]);
   const [historyRows] = await pool.execute(
@@ -322,10 +340,182 @@ app.patch('/api/auth/me', requireAuth, asyncRoute(async (req, res) => {
 }));
 
 
+// -----------------------------------------------------------------------------
+// Recursos sociais: codigos de amizade de uso unico e validade definida pelo servidor.
+// -----------------------------------------------------------------------------
+app.post('/api/friends/code', requireAuth, friendsCodeLimiter, asyncRoute(async (req, res) => {
+  const userId = req.auth.userId;
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute('DELETE FROM codigo_amizade WHERE usuario_id = ? OR expira_em_ms <= ?', [userId, Date.now()]);
+
+    const expiraEm = Date.now() + 5 * 60 * 1000;
+    let codigo = '';
+    let criado = false;
+    for (let tentativa = 0; tentativa < 5 && !criado; tentativa++) {
+      codigo = String(crypto.randomInt(10000000, 100000000));
+      try {
+        await connection.execute(
+          'INSERT INTO codigo_amizade (codigo, usuario_id, expira_em_ms) VALUES (?, ?, ?)',
+          [codigo, userId, expiraEm]);
+        criado = true;
+      } catch (error) {
+        if (!error || error.code !== 'ER_DUP_ENTRY') throw error;
+      }
+    }
+    if (!criado) throw new Error('Nao foi possivel gerar um codigo exclusivo.');
+    await connection.commit();
+    return res.status(201).json({ codigo, expiraEm, validadeSegundos: 300 });
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}));
+
+app.post('/api/friends/redeem', requireAuth, friendsRedeemLimiter, asyncRoute(async (req, res) => {
+  const codigo = asString(req.body?.codigo, 8).replace(/\s/g, '');
+  if (!/^\d{8}$/.test(codigo)) {
+    return res.status(400).json({ error: 'Informe um codigo de amizade valido com 8 digitos.', code: 'INVALID_FRIEND_CODE' });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [codeRows] = await connection.execute(
+      'SELECT codigo, usuario_id, expira_em_ms FROM codigo_amizade WHERE codigo = ? FOR UPDATE', [codigo]);
+    const convite = codeRows[0];
+    if (!convite) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Codigo inexistente, ja utilizado ou expirado.', code: 'FRIEND_CODE_NOT_FOUND' });
+    }
+    if (Number(convite.expira_em_ms) <= Date.now()) {
+      await connection.execute('DELETE FROM codigo_amizade WHERE codigo = ?', [codigo]);
+      await connection.commit();
+      return res.status(410).json({ error: 'Este codigo expirou. Peça um novo código ao seu amigo.', code: 'FRIEND_CODE_EXPIRED' });
+    }
+
+    const ownerId = Number(convite.usuario_id);
+    const currentId = req.auth.userId;
+    if (ownerId === currentId) {
+      await connection.rollback();
+      return res.status(400).json({ error: 'Voce nao pode adicionar seu proprio perfil.', code: 'FRIEND_SELF_ADD' });
+    }
+
+    const userA = Math.min(ownerId, currentId);
+    const userB = Math.max(ownerId, currentId);
+    const [existing] = await connection.execute(
+      'SELECT id FROM amizade WHERE usuario_a_id = ? AND usuario_b_id = ? LIMIT 1', [userA, userB]);
+    if (existing.length) {
+      // Um codigo ja resgatado nao deve permanecer disponivel para terceiros.
+      await connection.execute('DELETE FROM codigo_amizade WHERE codigo = ?', [codigo]);
+      await connection.commit();
+      return res.status(409).json({ error: 'Vocês ja sao amigos. O codigo foi invalidado.', code: 'ALREADY_FRIENDS' });
+    }
+
+    try {
+      await connection.execute(
+        'INSERT INTO amizade (usuario_a_id, usuario_b_id) VALUES (?, ?)', [userA, userB]);
+    } catch (error) {
+      if (!error || error.code !== 'ER_DUP_ENTRY') throw error;
+      // Mesmo em duas aceitações simultâneas, o código já resgatado é invalidado.
+      await connection.execute('DELETE FROM codigo_amizade WHERE codigo = ?', [codigo]);
+      await connection.commit();
+      return res.status(409).json({ error: 'Vocês ja sao amigos. O codigo foi invalidado.', code: 'ALREADY_FRIENDS' });
+    }
+    await connection.execute('DELETE FROM codigo_amizade WHERE codigo = ?', [codigo]);
+    const [ownerRows] = await connection.execute('SELECT id, nome, avatar_id FROM usuario WHERE id = ? LIMIT 1', [ownerId]);
+    await connection.commit();
+    return res.status(201).json({
+      success: true,
+      amigo: ownerRows[0] ? { id: Number(ownerRows[0].id), nome: ownerRows[0].nome, avatarId: ownerRows[0].avatar_id || 'avatar_01' } : null,
+      mensagem: 'Amizade adicionada com sucesso.'
+    });
+  } catch (error) {
+    await connection.rollback();
+    if (error && error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Vocês ja sao amigos.', code: 'ALREADY_FRIENDS' });
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+}));
+
+app.get('/api/friends', requireAuth, asyncRoute(async (req, res) => {
+  const userId = req.auth.userId;
+  const [friendRows] = await pool.execute(
+    `SELECT u.id, u.nome, u.avatar_id, u.gamificacao_json
+       FROM amizade a
+       INNER JOIN usuario u ON u.id = CASE WHEN a.usuario_a_id = ? THEN a.usuario_b_id ELSE a.usuario_a_id END
+      WHERE a.usuario_a_id = ? OR a.usuario_b_id = ?
+      ORDER BY u.nome ASC`, [userId, userId, userId]);
+
+  const ids = friendRows.map(row => Number(row.id));
+  const recentesPorAmigo = new Map(ids.map(id => [id, []]));
+  if (ids.length) {
+    const placeholders = ids.map(() => '?').join(',');
+    const [historyRows] = await pool.execute(
+      `SELECT h.usuario_id, h.treino_id, COALESCE(d.nome, h.treino_id) AS nome_desafio,
+              h.pontuacao, h.tempo_segundos, h.data_conclusao_ms
+         FROM historico_treino h
+         LEFT JOIN desafio_personalizado d ON d.id = h.treino_id
+        WHERE h.usuario_id IN (${placeholders}) AND h.concluido = 1 AND h.treino_id <> 'TREINO_LIVRE'
+        ORDER BY h.usuario_id ASC, h.data_conclusao_ms DESC, h.id DESC`, ids);
+    for (const row of historyRows) {
+      const lista = recentesPorAmigo.get(Number(row.usuario_id));
+      if (!lista || lista.length >= 5) continue;
+      lista.push({
+        treinoId: row.treino_id,
+        nome: row.nome_desafio || 'Desafio',
+        pontuacao: Number(row.pontuacao || 0),
+        tempoSegundos: Number(row.tempo_segundos || 0),
+        dataConclusao: Number(row.data_conclusao_ms || 0)
+      });
+    }
+  }
+
+  const amigos = friendRows.map(row => {
+    const xp = parseGamification(row.gamificacao_json).xpCarreira;
+    return {
+      id: Number(row.id),
+      nome: row.nome || 'Jogador',
+      avatarId: row.avatar_id || 'avatar_01',
+      xp,
+      nivel: Math.max(1, Math.floor(xp / 500) + 1),
+      ultimosDesafios: recentesPorAmigo.get(Number(row.id)) || []
+    };
+  });
+  res.json({ amigos, total: amigos.length });
+}));
+
+// Desafios que seus criadores optaram por compartilhar com a comunidade.
+app.get('/api/challenges/shared', requireAuth, asyncRoute(async (req, res) => {
+  const limit = rankingLimit(req.query.limit);
+  const [rows] = await pool.execute(
+    `SELECT d.id, d.nome, d.descricao, d.duracao_minutos, d.dificuldade, d.categoria,
+            d.sequencia_golpes, d.criado_em_ms, d.atualizado_em_ms, d.velocidade_alvo_kmh,
+            d.bolas_alvo, d.usa_camera, d.compartilhado, u.id AS autor_id, u.nome AS autor_nome,
+            u.avatar_id AS autor_avatar
+       FROM desafio_personalizado d
+       INNER JOIN usuario u ON u.id = d.usuario_id
+      WHERE d.compartilhado = 1 AND d.excluido = 0 AND d.usuario_id <> ?
+      ORDER BY d.atualizado_em_ms DESC, d.nome ASC LIMIT ?`, [req.auth.userId, limit]);
+  res.json({ desafios: rows.map(row => ({
+    ...challengeFromRow(row),
+    autorId: Number(row.autor_id),
+    autorNome: row.autor_nome || 'Jogador',
+    autorAvatarId: row.autor_avatar || 'avatar_01'
+  })) });
+}));
+
 // Ranking global: soma a pontuacao de todas as sessoes guiadas concluidas.
 // TREINO_LIVRE fica de fora porque mede volume de golpes e nao gera pontuacao.
 app.get('/api/rankings/global', requireAuth, asyncRoute(async (req, res) => {
   const limit = rankingLimit(req.query.limit);
+  const somenteAmigos = String(req.query.friendsOnly || '').toLowerCase() === 'true';
   const [rows] = await pool.execute(
     `SELECT u.id, u.nome, u.avatar_id AS avatarId,
             COALESCE(SUM(h.pontuacao), 0) AS pontuacaoTotal,
@@ -335,8 +525,12 @@ app.get('/api/rankings/global', requireAuth, asyncRoute(async (req, res) => {
        FROM usuario u
        INNER JOIN historico_treino h ON h.usuario_id = u.id
       WHERE h.concluido = 1 AND h.treino_id <> 'TREINO_LIVRE'
+        AND (? = 0 OR u.id = ? OR EXISTS (SELECT 1 FROM amizade a WHERE
+              (a.usuario_a_id = ? AND a.usuario_b_id = u.id) OR
+              (a.usuario_b_id = ? AND a.usuario_a_id = u.id)))
       GROUP BY u.id, u.nome, u.avatar_id
-      ORDER BY pontuacaoTotal DESC, sessoes DESC, ultimaSessao DESC, u.id ASC`);
+      ORDER BY pontuacaoTotal DESC, sessoes DESC, ultimaSessao DESC, u.id ASC`,
+    [somenteAmigos ? 1 : 0, req.auth.userId, req.auth.userId, req.auth.userId]);
 
   const classificados = rows.map((row, index) => ({
     id: Number(row.id),
@@ -352,7 +546,8 @@ app.get('/api/rankings/global', requireAuth, asyncRoute(async (req, res) => {
   res.json({
     ranking: classificados.slice(0, limit),
     meuRanking,
-    totalJogadores: classificados.length
+    totalJogadores: classificados.length,
+    somenteAmigos
   });
 }));
 
@@ -361,14 +556,18 @@ app.get('/api/rankings/challenges/:id', requireAuth, asyncRoute(async (req, res)
   const desafioId = asString(req.params.id, 80);
   if (!desafioId) return res.status(400).json({ error: 'Identificador do desafio invalido.', code: 'INVALID_CHALLENGE_ID' });
   const limit = rankingLimit(req.query.limit);
+  const somenteAmigos = String(req.query.friendsOnly || '').toLowerCase() === 'true';
   const [rows] = await pool.execute(
     `SELECT u.id, u.nome, u.avatar_id AS avatarId,
             h.pontuacao, h.tempo_segundos, h.data_conclusao_ms
        FROM usuario u
        INNER JOIN historico_treino h ON h.usuario_id = u.id
       WHERE h.concluido = 1 AND h.treino_id = ?
+        AND (? = 0 OR u.id = ? OR EXISTS (SELECT 1 FROM amizade a WHERE
+              (a.usuario_a_id = ? AND a.usuario_b_id = u.id) OR
+              (a.usuario_b_id = ? AND a.usuario_a_id = u.id)))
       ORDER BY h.pontuacao DESC, h.tempo_segundos ASC, h.data_conclusao_ms DESC, h.id DESC`,
-    [desafioId]);
+    [desafioId, somenteAmigos ? 1 : 0, req.auth.userId, req.auth.userId, req.auth.userId]);
 
   const melhorPorJogador = new Map();
   for (const row of rows) {
@@ -392,7 +591,8 @@ app.get('/api/rankings/challenges/:id', requireAuth, asyncRoute(async (req, res)
   res.json({
     ranking: classificados.slice(0, limit),
     meuRanking,
-    totalJogadores: classificados.length
+    totalJogadores: classificados.length,
+    somenteAmigos
   });
 }));
 
@@ -430,8 +630,8 @@ app.post('/api/sync', requireAuth, asyncRoute(async (req, res) => {
       await connection.execute(
         `INSERT INTO desafio_personalizado
           (id, usuario_id, nome, descricao, duracao_minutos, dificuldade, categoria,
-           sequencia_golpes, criado_em_ms, atualizado_em_ms, velocidade_alvo_kmh, bolas_alvo, usa_camera, excluido)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           sequencia_golpes, criado_em_ms, atualizado_em_ms, velocidade_alvo_kmh, bolas_alvo, usa_camera, excluido, compartilhado)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
           nome = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(nome), nome),
           descricao = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(descricao), descricao),
@@ -444,11 +644,12 @@ app.post('/api/sync', requireAuth, asyncRoute(async (req, res) => {
           bolas_alvo = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(bolas_alvo), bolas_alvo),
           usa_camera = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(usa_camera), usa_camera),
           excluido = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(excluido), excluido),
+          compartilhado = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(compartilhado), compartilhado),
           atualizado_em_ms = IF(usuario_id = VALUES(usuario_id) AND VALUES(atualizado_em_ms) >= atualizado_em_ms, VALUES(atualizado_em_ms), atualizado_em_ms)`,
         [id, req.auth.userId, nome, asString(item.descricao, 4000), asInt(item.duracaoMinutos, 1, 1, 1440),
           asString(item.dificuldade, 40, 'Iniciante'), asString(item.categoria, 60, 'PERSONALIZADO'),
           asString(item.sequenciaGolpes, 1000), criadoEm, atualizadoEm,
-          asFloat(item.velocidadeAlvoKmh), asInt(item.bolasAlvo, 0, 0, 100000), item.usaCamera ? 1 : 0, excluido]);
+          asFloat(item.velocidadeAlvoKmh), asInt(item.bolasAlvo, 0, 0, 100000), item.usaCamera ? 1 : 0, excluido, item.compartilhado ? 1 : 0]);
     }
 
     for (const item of history) {

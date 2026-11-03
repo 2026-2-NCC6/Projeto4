@@ -73,7 +73,7 @@ public final class RegistroGolpesSessao {
         return r == null ? 0 : r.quantidade;
     }
     public int getOutrosTennis() {
-        return getQuantidade("VOL") + getQuantidade("RUI");
+        return getQuantidade("RUI");
     }
 
     /** Resumo curto de todas as classes observadas, incluindo ruído e rejeições. */

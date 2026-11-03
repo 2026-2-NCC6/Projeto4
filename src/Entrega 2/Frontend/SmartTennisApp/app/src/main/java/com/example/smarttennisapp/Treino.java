@@ -27,6 +27,8 @@ import com.example.smarttennisapp.database.DatabaseProvider;
 import com.example.smarttennisapp.database.HistoricoTreinoEntity;
 import com.example.smarttennisapp.database.TreinoDAO;
 import com.example.smarttennisapp.util.BluetoothRaqueteUtil;
+import com.example.smarttennisapp.util.ControleVoz;
+import com.example.smarttennisapp.util.AudioFeedbackTreino;
 import com.example.smarttennisapp.jogo.ClasseGolpeRaquete;
 import com.example.smarttennisapp.jogo.ParserRaquete;
 import com.example.smarttennisapp.jogo.RegistroGolpesSessao;
@@ -80,6 +82,9 @@ public class Treino extends BaseActivity {
     private ImageButton btnVoltar;
     private Button btnComecar;
     private Button btnEncerrar;
+    private Button btnControleVoz;
+    private ControleVoz controleVoz;
+    private AudioFeedbackTreino audioFeedback;
     private InicioTreinoOverlay sinalInicioTreino;
     private boolean contagemInicioAtiva = false;
 
@@ -199,6 +204,8 @@ public class Treino extends BaseActivity {
         receberDadosTreino();
 
         configurarBotoes();
+        audioFeedback = new AudioFeedbackTreino(this);
+        configurarControleVoz();
 
         prepararTela();
         if (treinoUsaCamera) configurarCameraTreino();
@@ -217,6 +224,7 @@ public class Treino extends BaseActivity {
         btnVoltar = findViewById(R.id.btnVoltarTreino);
         btnComecar = findViewById(R.id.btnComecarTreino);
         btnEncerrar = findViewById(R.id.btnEncerrarTreino);
+        btnControleVoz = findViewById(R.id.btnControleVozTreino);
 
         txtOrigem = findViewById(R.id.txtOrigemTreino);
         txtNome = findViewById(R.id.txtNomeTreino);
@@ -520,6 +528,25 @@ public class Treino extends BaseActivity {
         });
     }
 
+    private void configurarControleVoz() {
+        if (btnControleVoz == null) return;
+        controleVoz = new ControleVoz(this, btnControleVoz, new ControleVoz.Listener() {
+            @Override public void aoIniciarTreino() {
+                if (!treinoAtivo && !contagemInicioAtiva) iniciarTreino();
+            }
+            @Override public void aoPararTreino() {
+                if (contagemInicioAtiva) {
+                    sinalInicioTreino.cancel();
+                    contagemInicioAtiva = false;
+                    btnComecar.setEnabled(bluetoothConectado);
+                    if (audioFeedback != null) audioFeedback.falar("Contagem cancelada.");
+                } else if (treinoAtivo) {
+                    finalizarTreino(false);
+                }
+            }
+        });
+    }
+
     // ============================================================
     // BLUETOOTH
     // ============================================================
@@ -572,6 +599,7 @@ public class Treino extends BaseActivity {
                 permissions,
                 grantResults
         );
+        if (controleVoz != null) controleVoz.tratarResultadoPermissao(requestCode, grantResults);
 
         if (requestCode == REQUEST_BLUETOOTH) {
 
@@ -861,6 +889,7 @@ public class Treino extends BaseActivity {
 
             if (!evento.temClasseIdentificada()) {
                 comboAtual = 0;
+                if (audioFeedback != null) { audioFeedback.erro(); audioFeedback.falar("Golpe não identificado. Tente novamente."); }
                 txtUltimoGolpe.setText("Golpe não identificado");
                 atualizarGamificacaoUI();
                 atualizarProgresso();
@@ -882,7 +911,7 @@ public class Treino extends BaseActivity {
             case "SAQUE": saques++; break;
             case "FOREHAND": forehands++; break;
             case "BACKHAND": backhands++; break;
-            default: break; // Voleio e ruído ficam detalhados por classe no JSON.
+            default: break; // Ruído/outro fica detalhado por classe no JSON.
         }
     }
 
@@ -895,6 +924,7 @@ public class Treino extends BaseActivity {
 
         String esperado = sequenciaGolpes.get(indiceGolpeAtual);
         if (ClasseGolpeRaquete.corresponde(esperado, evento.codigoClasse)) {
+            if (audioFeedback != null) audioFeedback.sucesso();
             golpesCorretos++;
             comboAtual++;
             melhorCombo = Math.max(melhorCombo, comboAtual);
@@ -913,6 +943,7 @@ public class Treino extends BaseActivity {
             }
             atualizarGolpeEsperado();
         } else {
+            if (audioFeedback != null) { audioFeedback.erro(); audioFeedback.falar("Golpe incorreto. Faça: " + nomeGolpe(esperado) + "."); }
             comboAtual = 0;
             atualizarGamificacaoUI();
             atualizarProgresso();
@@ -1089,7 +1120,14 @@ public class Treino extends BaseActivity {
 
         contagemInicioAtiva = true;
         btnComecar.setEnabled(false);
-        sinalInicioTreino.start(() -> {
+        sinalInicioTreino.start((numero, indice) -> {
+            if (audioFeedback != null) {
+                if (indice == 0) audioFeedback.falar("Três.");
+                else if (indice == 1) audioFeedback.falar("Dois.");
+                else if (indice == 2) audioFeedback.falar("Um.");
+                else audioFeedback.falar("Vai!");
+            }
+        }, () -> {
             contagemInicioAtiva = false;
             if (!bluetoothConectado || encerrando) {
                 btnComecar.setEnabled(bluetoothConectado);
@@ -1136,6 +1174,7 @@ public class Treino extends BaseActivity {
         atualizarGamificacaoUI();
         atualizarProgresso();
         atualizarSequenciaVisual();
+        if (audioFeedback != null) audioFeedback.falar("Treino iniciado.");
         atualizarGolpeEsperado();
         iniciarCronometro();
         enviarComando("k");
@@ -1149,6 +1188,7 @@ public class Treino extends BaseActivity {
             return;
         }
         txtGolpeEsperado.setText("Sequência concluída · " + descricaoObjetivoCamera());
+        if (audioFeedback != null) audioFeedback.falar("Sequência concluída. Continue até completar o objetivo da câmera.");
     }
 
     // ============================================================
@@ -1275,9 +1315,9 @@ public class Treino extends BaseActivity {
             return;
         }
 
-        txtGolpeEsperado.setText(nomeGolpe(
-                sequenciaGolpes.get(indiceGolpeAtual)
-        ));
+        String nome = nomeGolpe(sequenciaGolpes.get(indiceGolpeAtual));
+        txtGolpeEsperado.setText(nome);
+        if (treinoAtivo && audioFeedback != null) audioFeedback.falar("Próximo golpe: " + nome + ".");
     }
 
     private void atualizarProgresso() {
@@ -1326,6 +1366,10 @@ public class Treino extends BaseActivity {
 
         treinoAtivo = false;
         sessaoConcluida = concluidoPorObjetivo;
+        if (audioFeedback != null) {
+            if (concluidoPorObjetivo) audioFeedback.sucesso();
+            audioFeedback.falar(concluidoPorObjetivo ? "Treino concluído. Parabéns!" : "Treino finalizado.");
+        }
 
         tempoDecorrido =
                 System.currentTimeMillis()
@@ -1613,9 +1657,18 @@ public class Treino extends BaseActivity {
     // ============================================================
 
     @Override
+    protected void onPause() {
+        // Não mantém o microfone ativo quando a tela de treino sai de primeiro plano.
+        if (controleVoz != null && controleVoz.estaOuvindo()) controleVoz.pararEscuta();
+        super.onPause();
+    }
+
+    @Override
     protected void onDestroy() {
 
         if (sinalInicioTreino != null) sinalInicioTreino.cancel();
+        if (controleVoz != null) controleVoz.liberar();
+        if (audioFeedback != null) audioFeedback.close();
         contagemInicioAtiva = false;
         encerrando = true;
 

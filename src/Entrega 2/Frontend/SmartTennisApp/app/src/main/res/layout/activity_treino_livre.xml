@@ -290,6 +290,17 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <Button
+            android:id="@+id/btnControleVozLivre"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="@color/surface_secondary"
+            android:text="🎙 Controle por voz"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp" />
+
+        <Button
             android:id="@+id/btnIniciarTreino"
             android:layout_width="match_parent"
             android:layout_height="54dp"

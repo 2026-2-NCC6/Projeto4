@@ -69,19 +69,50 @@ public final class BackendApi {
     }
 
     public static JSONObject obterRankingGlobal(Context context, String token, int limite) throws IOException {
+        return obterRankingGlobal(context, token, limite, false);
+    }
+
+    public static JSONObject obterRankingGlobal(Context context, String token, int limite, boolean somenteAmigos) throws IOException {
         int tamanho = Math.max(1, Math.min(100, limite));
-        return request(context, "GET", "/api/rankings/global?limit=" + tamanho, token, null);
+        return request(context, "GET", "/api/rankings/global?limit=" + tamanho
+                + "&friendsOnly=" + somenteAmigos, token, null);
+    }
+
+    public static JSONObject gerarCodigoAmizade(Context context, String token) throws IOException {
+        return request(context, "POST", "/api/friends/code", token, new JSONObject());
+    }
+
+    public static JSONObject resgatarCodigoAmizade(Context context, String token, String codigo) throws IOException {
+        JSONObject body = new JSONObject();
+        try { body.put("codigo", codigo); }
+        catch (Exception e) { throw new IOException("Nao foi possivel preparar o codigo de amizade.", e); }
+        return request(context, "POST", "/api/friends/redeem", token, body);
+    }
+
+    public static JSONObject listarAmigos(Context context, String token) throws IOException {
+        return request(context, "GET", "/api/friends", token, null);
+    }
+
+    public static JSONObject listarDesafiosCompartilhados(Context context, String token, int limite) throws IOException {
+        int tamanho = Math.max(1, Math.min(100, limite));
+        return request(context, "GET", "/api/challenges/shared?limit=" + tamanho, token, null);
     }
 
     public static JSONObject obterRankingDesafio(Context context, String token, String desafioId,
                                                    String nomeDesafio, int limite) throws IOException {
+        return obterRankingDesafio(context, token, desafioId, nomeDesafio, limite, false);
+    }
+
+    public static JSONObject obterRankingDesafio(Context context, String token, String desafioId,
+                                                   String nomeDesafio, int limite, boolean somenteAmigos) throws IOException {
         if (desafioId == null || desafioId.trim().isEmpty()) {
             throw new IOException("O desafio selecionado nao possui identificador valido.");
         }
         int tamanho = Math.max(1, Math.min(100, limite));
         String id = URLEncoder.encode(desafioId, StandardCharsets.UTF_8.name()).replace("+", "%20");
         String nome = URLEncoder.encode(nomeDesafio == null ? "" : nomeDesafio, StandardCharsets.UTF_8.name());
-        return request(context, "GET", "/api/rankings/challenges/" + id + "?nome=" + nome + "&limit=" + tamanho, token, null);
+        return request(context, "GET", "/api/rankings/challenges/" + id + "?nome=" + nome + "&limit=" + tamanho
+                + "&friendsOnly=" + somenteAmigos, token, null);
     }
 
     private static JSONObject request(Context context, String method, String path, String token, JSONObject body) throws IOException {
