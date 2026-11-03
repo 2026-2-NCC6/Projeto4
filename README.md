@@ -15,7 +15,7 @@
 ## Descrição
 
 <p align="center">
-<img src="https://pix4free.org/assets/library/2021-01-20/originals/game.jpg" alt="Logo SmartAce" border="0">
+<img src="https://github.com/2026-2-NCC6/Projeto4/blob/main/imagens/Smart%20Ace%20-%20Logo.jpg" alt="Logo SmartAce" border="0">
   Logo by <a href="https://github.com/2026-2-NCC6/Projeto4">Enrolados</a> <a rel="license" href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>
 </p>
 
@@ -29,16 +29,17 @@ prática por jogadores, estudantes e treinadores.
 -Raiz<br>
 |<br>
 |-->documentos<br>
-  &emsp;|-->antigos<br>
-  &emsp;|Documentação.docx<br>
-|-->executáveis<br>
-  &emsp;|-->windows<br>
-  &emsp;|-->android<br>
-  &emsp;|-->HTML<br>
+  &emsp;|-->Entrega 1<br>
+  &emsp;|-->Entrega 2<br>
 |-->imagens<br>
+  &emsp;|logos
 |-->src<br>
-  &emsp;|-->Backend<br>
-  &emsp;|-->Frontend<br>
+  &emsp;|-->Entrega 1<br>
+    &emsp;|-->Backend<br>
+    &emsp;|-->Frontend<br>
+  &emsp;|-->Entrega 2<br>
+    &emsp;|-->Backend<br>
+    &emsp;|-->Frontend<br>
 |readme.md<br>
 
 ## 🛠 Instalação
@@ -51,8 +52,13 @@ Execute o APK e siga as instruções de seu telefone.
 <b>Windows/Linux:</b>
 
 Para o modelo de visão computacional:
-
+Rode os comandos a baixo na pasta /src/Entrega 2/Frontend/Detecção e visão computacional/:
+```sh
+pip install -r requirements.txt
+streamlit run smarttennis_streamlit.py
+```
 Para a dashboard:
+
 
 ```sh
 Coloque código do prompt de comnando se for necessário
