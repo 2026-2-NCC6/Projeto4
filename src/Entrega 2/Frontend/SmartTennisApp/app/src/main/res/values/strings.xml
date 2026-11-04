@@ -1,6 +1,6 @@
 <resources>
     <!--Splash Screen-->
-    <string name="app_name">SmartTennisApp</string>
+    <string name="app_name">Smart Ace</string>
     <string name="splash_screen">Começe a sua jornada</string>
     <string name="btn_entrar">Entrar</string>
 
