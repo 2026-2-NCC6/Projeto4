@@ -75,11 +75,51 @@ Para abrir este projeto você necessita das seguintes ferramentas:
 -<a href="https://www.python.org/downloads/">Python 3.15></a>
 -<a href="https://git-scm.com/">Git</a>
 
+Clone o projeto:
 ```sh
-make install
-npm test
-Coloque código do prompt de comnando se for necessário
+git clone https://github.com/2026-2-NCC6/Projeto4
+cd Projeto4
 ```
+
+# Ambiente APK
+
+Abra o projeto na pasta "/src/Entrega 2/Frontend/SmartTennisApp/" no Android Studio
+
+# Modelo de visão computacional:
+Rode os comandos a baixo:
+```sh
+cd ./src/Entrega 2/Frontend/Detecção e visão computacional/
+pip install -r requirements.txt
+streamlit run smarttennis_streamlit.py
+```
+# Dashboard:
+
+Rode os comandos a baixo:
+```sh
+cd ./src/Entrega 2/Frontend/Dashboard/
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+# ESP32 + MPU-6050
+Abra o detector_golpes.ino na pasta ./src/Entrega 2/Frontend/IoT/ no Arduino IDE
+Instale as bibliotecas do ESP32
+Conecte o seu ESP32 com o MPU-6050, com essas conexões:
+ESP32  MPU-6050
+VCC -->5V
+
+
+# Banco de dados
+Exporte o banco de dados no mysql com o comando abaixo:
+
+# Backend
+Rode os comandos a baixo:
+```sh
+cd ./src/Entrega 2/Backend
+npm install
+node server.js
+```
+
 
 ## 📋 Licença/License
 <a href="https://github.com/2026-2-NCC6/Projeto4">SmartAce</a> © 2026 by <a href="https://github.com/2026-2-NCC6">FECAP, Guilherme Barioni, Iury Xavier, Lilian Conde, Marcus Duque e Murilo Vieira</a> is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a><img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;">
