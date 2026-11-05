@@ -107,6 +107,7 @@ Instale as bibliotecas do ESP32
 Conecte o seu ESP32 com o MPU-6050, com essas conexões:
 
 | **ESP32** | **MPU-6050** |
+| :--- | :--- |
 | 5V | VCC |
 | GND | GND |
 | GPIO21 | SDA |
