@@ -116,6 +116,13 @@ Conecte o seu ESP32 com o MPU-6050, com essas conexões:
 # Banco de dados
 Exporte o banco de dados no mysql com o comando abaixo:
 
+```sh
+mysql -u root -p
+GRANT ALL PRIVILEGES ON smarttennis_backend.* TO 'user'@'localhost';
+quit
+mysql -u user-p smarttennis_backend< ./db.sql
+```
+
 # Backend
 Rode os comandos a baixo:
 ```sh
