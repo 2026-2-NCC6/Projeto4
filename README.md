@@ -105,9 +105,12 @@ streamlit run app.py
 Abra o detector_golpes.ino na pasta ./src/Entrega 2/Frontend/IoT/ no Arduino IDE
 Instale as bibliotecas do ESP32
 Conecte o seu ESP32 com o MPU-6050, com essas conexões:
-ESP32  MPU-6050
-VCC -->5V
 
+| **ESP32** | **MPU-6050** |
+| 5V | VCC |
+| GND | GND |
+| GPIO21 | SDA |
+| GPIO22 | SCL |
 
 # Banco de dados
 Exporte o banco de dados no mysql com o comando abaixo:
@@ -120,7 +123,6 @@ npm install
 node server.js
 ```
 
-
 ## 📋 Licença/License
 <a href="https://github.com/2026-2-NCC6/Projeto4">SmartAce</a> © 2026 by <a href="https://github.com/2026-2-NCC6">FECAP, Guilherme Barioni, Iury Xavier, Lilian Conde, Marcus Duque e Murilo Vieira</a> is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a><img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;">
 
@@ -128,9 +130,5 @@ node server.js
 
 Aqui estão as referências usadas no projeto.
 
-1. <https://github.com/iuricode/readme-template>
-2. <https://github.com/gabrieldejesus/readme-model>
-3. <https://chooser-beta.creativecommons.org/>
-4. <https://freesound.org/>
-5. <https://www.toptal.com/developers/gitignore>
-6. Músicas por: <a href="https://freesound.org/people/DaveJf/sounds/616544/"> DaveJf </a> e <a href="https://freesound.org/people/DRFX/sounds/338986/"> DRFX </a> ambas com Licença CC 0.
+1. BOWERS, CHRIS. ITF GLOBAL TENNIS REPORT: PARTICIPATION HITS 106 MILLION IN FIVE YEARS. DISPONÍVEL EM: <https://www.itftennis.com/en/news-and-media/articles/itf-global-tennis-report-participation-hits-106-million-in-five-years/>. ACESSO EM: 04 NOV.. 2026.
+2. ITF - ITF GLOBAL TENNIS REPORT 2021. DISPONÍVEL EM: <http://itf.uberflip.com/i/1401406-itf-global-tennis-report-2021>. ACESSO EM: 04 NOV.. 2026
