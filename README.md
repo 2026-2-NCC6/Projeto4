@@ -70,9 +70,13 @@ streamlit run app.py
 Para abrir este projeto você necessita das seguintes ferramentas:
 
 -<a href="https://nodejs.org">NODE.JS</a>
+<br><br>
 -<a href="https://dev.mysql.com/downloads/installer/">MySQL</a>
+<br><br>
 -<a href="https://www.arduino.cc/en/software/">Arduino IDE</a>
+<br><br>
 -<a href="https://www.python.org/downloads/">Python 3.15></a>
+<br><br>
 -<a href="https://git-scm.com/">Git</a>
 
 Clone o projeto:
@@ -81,18 +85,18 @@ git clone https://github.com/2026-2-NCC6/Projeto4
 cd Projeto4
 ```
 
-# Ambiente APK
+### Ambiente APK
 
 Abra o projeto na pasta "/src/Entrega 2/Frontend/SmartTennisApp/" no Android Studio
 
-# Modelo de visão computacional:
+### Modelo de visão computacional:
 Rode os comandos a baixo:
 ```sh
 cd ./src/Entrega 2/Frontend/Detecção e visão computacional/
 pip install -r requirements.txt
 streamlit run smarttennis_streamlit.py
 ```
-# Dashboard:
+### Dashboard:
 
 Rode os comandos a baixo:
 ```sh
