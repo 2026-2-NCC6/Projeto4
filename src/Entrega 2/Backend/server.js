@@ -23,6 +23,17 @@ if (JWT_SECRET.length < 32 || JWT_SECRET.startsWith('troque-por')) {
   process.exit(1);
 }
 
+// Chave estatica usada SOMENTE pelo dashboard (rotas /api/admin/*, apenas leitura).
+// Se nao for definida, essas rotas ficam desativadas (503).
+const DASHBOARD_API_KEY = process.env.DASHBOARD_API_KEY || '';
+if (DASHBOARD_API_KEY && (DASHBOARD_API_KEY.length < 32 || DASHBOARD_API_KEY.startsWith('troque-por'))) {
+  console.error('DASHBOARD_API_KEY precisa ter pelo menos 32 caracteres (ou deixe vazia para desativar o dashboard).');
+  process.exit(1);
+}
+const DASHBOARD_KEY_DIGEST = crypto.createHash('sha256').update(DASHBOARD_API_KEY).digest();
+const ADMIN_PAGE_DEFAULT = 2000;
+const ADMIN_PAGE_MAX = 5000;
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST || '127.0.0.1',
   port: Number(process.env.DB_PORT || 3306),
@@ -694,6 +705,125 @@ app.post('/api/sync', requireAuth, asyncRoute(async (req, res) => {
 
 app.get('/api/sync', requireAuth, asyncRoute(async (req, res) => {
   res.json(await getSnapshot(req.auth.userId));
+}));
+
+// ---------------------------------------------------------------------------
+// API do dashboard (somente leitura). Autenticada por X-Dashboard-Key.
+// Nunca expõe senha_hash. O JSON de metricas da camera so sai na rota propria.
+// Datas TIMESTAMP saem como epoch em ms (UNIX_TIMESTAMP), sem depender de fuso.
+// Listas usam paginacao por cursor: ?limit=N&afterId=<ultimo id recebido>.
+// ---------------------------------------------------------------------------
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Muitas requisicoes ao dashboard. Aguarde um instante.', code: 'ADMIN_RATE_LIMIT' }
+});
+
+function requireDashboardKey(req, res, next) {
+  if (!DASHBOARD_API_KEY) {
+    return res.status(503).json({ error: 'API do dashboard desativada. Defina DASHBOARD_API_KEY no .env do backend.', code: 'ADMIN_DISABLED' });
+  }
+  const sent = crypto.createHash('sha256').update(req.get('x-dashboard-key') || '').digest();
+  if (!crypto.timingSafeEqual(sent, DASHBOARD_KEY_DIGEST)) {
+    return res.status(401).json({ error: 'Chave do dashboard invalida.', code: 'ADMIN_KEY_INVALID' });
+  }
+  return next();
+}
+
+function adminPageLimit(value) {
+  return asInt(value, ADMIN_PAGE_DEFAULT, 1, ADMIN_PAGE_MAX);
+}
+
+function adminUserFromRow(row) {
+  return {
+    id: Number(row.id),
+    nome: row.nome,
+    email: row.email,
+    dataNascimento: row.data_nascimento || null,
+    gamificacaoJson: row.gamificacao_json || null,
+    criadoEmMs: Number(row.criado_em_ms || 0),
+    atualizadoEmMs: Number(row.atualizado_em_ms || 0)
+  };
+}
+
+function adminHistoryFromRow(row) {
+  const { metricasCameraJson, ...item } = historyFromRow({ ...row, metricas_camera_json: null });
+  return {
+    id: Number(row.id),
+    usuarioId: Number(row.usuario_id),
+    ...item,
+    metricasChars: Number(row.metricas_chars || 0),
+    recebidoEmMs: Number(row.recebido_em_ms || 0)
+  };
+}
+
+function adminChallengeFromRow(row) {
+  return { usuarioId: Number(row.usuario_id), ...challengeFromRow(row) };
+}
+
+app.use('/api/admin', adminLimiter, requireDashboardKey);
+
+app.get('/api/admin/counts', asyncRoute(async (_req, res) => {
+  const [[row]] = await pool.query(
+    `SELECT (SELECT COUNT(*) FROM usuario) AS usuarios,
+            (SELECT COUNT(*) FROM historico_treino) AS historico,
+            (SELECT COUNT(*) FROM desafio_personalizado) AS desafios`);
+  res.json({
+    usuario: Number(row.usuarios),
+    historicoTreino: Number(row.historico),
+    desafioPersonalizado: Number(row.desafios),
+    serverTime: Date.now()
+  });
+}));
+
+app.get('/api/admin/usuarios', asyncRoute(async (req, res) => {
+  const limit = adminPageLimit(req.query.limit);
+  const afterId = asInt(req.query.afterId, 0, 0);
+  const [rows] = await pool.query(
+    `SELECT id, nome, email, data_nascimento, gamificacao_json,
+            UNIX_TIMESTAMP(criado_em) * 1000 AS criado_em_ms,
+            UNIX_TIMESTAMP(atualizado_em) * 1000 AS atualizado_em_ms
+       FROM usuario WHERE id > ? ORDER BY id ASC LIMIT ${limit + 1}`, [afterId]);
+  const more = rows.length > limit;
+  const page = more ? rows.slice(0, limit) : rows;
+  res.json({ items: page.map(adminUserFromRow), nextAfterId: more ? Number(page[page.length - 1].id) : null, serverTime: Date.now() });
+}));
+
+app.get('/api/admin/historico', asyncRoute(async (req, res) => {
+  const limit = adminPageLimit(req.query.limit);
+  const afterId = asInt(req.query.afterId, 0, 0);
+  const [rows] = await pool.query(
+    `SELECT id, usuario_id, sync_id, treino_id, data_conclusao_ms, tempo_segundos, pontuacao,
+            saques, forehands, backhands, golpes_corretos, total_golpes, golpes_recebidos,
+            concluido, bolas_detectadas, bolas_acima_meta, velocidade_maxima_kmh,
+            velocidade_media_kmh, CHAR_LENGTH(metricas_camera_json) AS metricas_chars,
+            UNIX_TIMESTAMP(recebido_em) * 1000 AS recebido_em_ms
+       FROM historico_treino WHERE id > ? ORDER BY id ASC LIMIT ${limit + 1}`, [afterId]);
+  const more = rows.length > limit;
+  const page = more ? rows.slice(0, limit) : rows;
+  res.json({ items: page.map(adminHistoryFromRow), nextAfterId: more ? Number(page[page.length - 1].id) : null, serverTime: Date.now() });
+}));
+
+app.get('/api/admin/historico/:id/camera', asyncRoute(async (req, res) => {
+  const id = asInt(req.params.id, 0, 0);
+  const [rows] = await pool.query('SELECT id, metricas_camera_json FROM historico_treino WHERE id = ? LIMIT 1', [id]);
+  if (!rows.length) return res.status(404).json({ error: 'Sessao nao encontrada.', code: 'NOT_FOUND' });
+  res.json({ id: Number(rows[0].id), metricasCameraJson: rows[0].metricas_camera_json || '[]' });
+}));
+
+app.get('/api/admin/desafios', asyncRoute(async (req, res) => {
+  const limit = adminPageLimit(req.query.limit);
+  const afterId = asString(req.query.afterId, 80, '');
+  const [rows] = await pool.query(
+    `SELECT id, usuario_id, nome, descricao, duracao_minutos, dificuldade, categoria,
+            sequencia_golpes, criado_em_ms, atualizado_em_ms, velocidade_alvo_kmh,
+            bolas_alvo, usa_camera, excluido, compartilhado
+       FROM desafio_personalizado WHERE id > ? ORDER BY id ASC LIMIT ${limit + 1}`, [afterId]);
+  const more = rows.length > limit;
+  const page = more ? rows.slice(0, limit) : rows;
+  res.json({ items: page.map(adminChallengeFromRow), nextAfterId: more ? page[page.length - 1].id : null, serverTime: Date.now() });
 }));
 
 app.use((req, res) => res.status(404).json({ error: 'Rota nao encontrada.', code: 'NOT_FOUND' }));
