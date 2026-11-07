@@ -68,8 +68,8 @@
 | **Ferramenta utilizada** | ChatGPT (OpenAI) |
 | **Versão/modelo** | GPT5 |
 | **Disciplina / Trabalho** | Entrega 2 - Inovação e Empreendedorismo |
-| **Finalidade de uso** | "Estou revisando a segunda entrega de Inovação e Empreendedorismo. Me ajude a avaliar a atratividade do setor usando as Cinco Forças de Porter, considerando o contexto de uma solução de treinamento de tênis que combina sensor, aplicativo e recursos de análise. Avalie se os concorrentes, produtos substitutos, poder dos clientes, fornecedores e ameaça de novos entrantes fazem sentindo lógico. Em seguida, revise o Business Model Canvas e verifique a coerência entre os diferentes blocos. Aponte blocos que não estejam conectados entre si e sugira ajustes que mantenham a lógica do negócio consistente.", "Apresente uma lista objetiva de inconsistências, correções sugeridas e dados que precisam ser confirmados antes da apresentação." |
-| ***Prompts* principais utilizados** |  |
+| **Finalidade de uso** | Revisão crítica e apoio à estruturação da análise estratégica e do modelo de negócios da Smart Ace. |
+| ***Prompts* principais utilizados** | "Estou revisando a segunda entrega de Inovação e Empreendedorismo. Me ajude a avaliar a atratividade do setor usando as Cinco Forças de Porter, considerando o contexto de uma solução de treinamento de tênis que combina sensor, aplicativo e recursos de análise. Avalie se os concorrentes, produtos substitutos, poder dos clientes, fornecedores e ameaça de novos entrantes fazem sentindo lógico. Em seguida, revise o Business Model Canvas e verifique a coerência entre os diferentes blocos. Aponte blocos que não estejam conectados entre si e sugira ajustes que mantenham a lógica do negócio consistente.", "Apresente uma lista objetiva de inconsistências, correções sugeridas e dados que precisam ser confirmados antes da apresentação." |
 | **Trechos ou entregas afetadas** | Análise das Cinco Forças de Porter, Business Model Canvas, design do slide |
 
 ### Redes de Computadores e Cibersegurança
