@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import html
 import itertools
+import math
 import time
 from types import SimpleNamespace
 
@@ -44,7 +45,7 @@ pio.templates["smartace"] = go.layout.Template(layout=dict(
     xaxis=dict(gridcolor="#EEF2EF", zeroline=False, linecolor="#D0D5DD"),
     yaxis=dict(gridcolor="#EEF2EF", zeroline=False),
     title=dict(font=dict(size=15, color="#0B3D2E"), x=0.01),
-    legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="right", x=1, title_text=""),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, title_text=""),
     hoverlabel=dict(bgcolor="white", font_size=12),
 ))
 pio.templates.default = "smartace"
@@ -74,6 +75,7 @@ section[data-testid="stSidebar"] { border-right: 1px solid #DCE8E0; }
 .sec span { color:#667085; font-size:.86rem; }
 .insight { background:#fff; border:1px solid #E1EAE4; border-left:4px solid #1B8A5A; border-radius:10px;
            padding:.6rem .85rem; font-size:.9rem; color:#344054; margin-bottom:.6rem; }
+.ctitle { font-size:.98rem; font-weight:700; color:#0B3D2E; line-height:1.3; margin:.05rem 0 .25rem; }
 .brand { font-size:1.25rem; color:#0B3D2E; margin-bottom:.2rem; }
 .brand span { color:#667085; font-size:.8rem; }
 .stTabs [data-baseweb="tab-list"] { gap:.25rem; border-bottom:1px solid #DCE8E0; }
@@ -85,9 +87,52 @@ div[data-testid="stVerticalBlockBorderWrapper"] { background:#fff; border-radius
 _keys = itertools.count()
 
 
+def curto(texto, n=26):
+    """Encurta rótulos longos (o nome completo continua no hover)."""
+    t = str(texto)
+    return t if len(t) <= n else t[: n - 1].rstrip() + "…"
+
+
+def _legenda(fig):
+    """(nº de entradas, largura estimada em px) da legenda que o Plotly vai desenhar."""
+    if fig.layout.showlegend is False:
+        return 0, 0
+    n = w = 0
+    tem_pizza = False
+    for t in fig.data:
+        if t.showlegend is False:
+            continue
+        if t.type == "pie":
+            tem_pizza = True
+            rotulos = list(t.labels) if t.labels is not None else []
+            n += len(rotulos)
+            w += sum(len(str(x)) * 7 + 34 for x in rotulos)
+        elif getattr(t, "name", None):
+            n += 1
+            w += len(str(t.name)) * 7 + 34
+    if n == 1 and not tem_pizza and fig.layout.showlegend is not True:
+        return 0, 0  # com um único traço o Plotly não mostra legenda
+    return n, w
+
+
 def plot(fig, height=340):
-    fig.update_layout(height=height, margin=dict(l=8, r=8, t=56, b=8))
+    """Desenha o gráfico sem sobreposição: título em HTML (quebra linha), legenda numa faixa
+    própria acima do gráfico, margens automáticas para rótulos e títulos dos eixos."""
+    titulo = fig.layout.title.text if fig.layout.title is not None and fig.layout.title.text else ""
+    n_leg, larg = _legenda(fig)
+    linhas = max(1, math.ceil(larg / 400)) if n_leg else 0
+    fig.update_layout(title_text=None, height=height,
+                      margin=dict(l=12, r=12, t=22 + 24 * linhas, b=12),
+                      legend=dict(title=dict(text="")),
+                      uniformtext_minsize=10, uniformtext_mode="hide")
+    fig.update_xaxes(automargin=True, title_standoff=8)
+    fig.update_yaxes(automargin=True, title_standoff=8)
+    fig.update_traces(cliponaxis=False, selector=dict(type="scatter"))
+    fig.update_traces(textposition="inside", textinfo="percent", insidetextorientation="horizontal",
+                      selector=dict(type="pie"))
     with st.container(border=True):
+        if titulo:
+            st.markdown(f'<div class="ctitle">{html.escape(titulo)}</div>', unsafe_allow_html=True)
         st.plotly_chart(fig, theme=None, key=f"chart-{next(_keys)}")
 
 
@@ -217,10 +262,11 @@ def aba_visao_geral(c):
         plot(fig)
     with c2:
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=daily.index, y=daily["horas"], name="Horas treinadas", marker_color="#BFE3CD", yaxis="y2"))
-        fig.add_trace(go.Scatter(x=daily.index, y=daily["ativos"], name="Usuários ativos", line=dict(color=BLUE, width=3)))
-        fig.update_layout(title="Usuários ativos e horas treinadas por dia",
-                          yaxis2=dict(overlaying="y", side="right", showgrid=False, title="horas"))
+        fig.add_trace(go.Bar(x=daily.index, y=daily["horas"], name="Horas treinadas", marker_color="#BFE3CD"))
+        fig.add_trace(go.Scatter(x=daily.index, y=daily["ativos"], name="Usuários ativos", yaxis="y2",
+                                 line=dict(color=BLUE, width=3)))
+        fig.update_layout(title="Usuários ativos e horas treinadas por dia", yaxis_title="horas",
+                          yaxis2=dict(overlaying="y", side="right", showgrid=False, title="usuários ativos"))
         plot(fig)
 
     cal = D.calendario(c.h, c.hoje)
@@ -417,9 +463,7 @@ def aba_desempenho(c):
         y=["saques", "forehands", "backhands"],
         title="Proporção entre golpes (%)",
         color_discrete_sequence=[YELLOW, GREEN, BLUE]
-    ).update_layout(barnorm="percent")
-)
-
+    ).update_layout(barnorm="percent"))
 
     section("Aprendizado", "Os usuários melhoram com a prática?")
     c1, c2 = st.columns(2)
@@ -429,11 +473,12 @@ def aba_desempenho(c):
             st.info("Poucos dados para a curva de aprendizado.")
         else:
             fig = go.Figure()
-            fig.add_trace(go.Bar(x=ca["n"], y=ca["usuarios"], name="Usuários", marker_color="#D6EBDD", yaxis="y2"))
-            fig.add_trace(go.Scatter(x=ca["n"], y=ca["precisao"], name="Precisão média (%)", mode="lines+markers", line=dict(color=GREEN, width=3)))
+            fig.add_trace(go.Bar(x=ca["n"], y=ca["usuarios"], name="Usuários", marker_color="#D6EBDD"))
+            fig.add_trace(go.Scatter(x=ca["n"], y=ca["precisao"], name="Precisão média (%)", yaxis="y2",
+                                     mode="lines+markers", line=dict(color=GREEN, width=3)))
             fig.update_layout(title="Curva de aprendizado: precisão × nº da sessão (15 = 15 ou mais)",
-                              xaxis_title="nº da sessão do usuário",
-                              yaxis2=dict(overlaying="y", side="right", showgrid=False, title="usuários"))
+                              xaxis_title="nº da sessão do usuário", yaxis_title="usuários",
+                              yaxis2=dict(overlaying="y", side="right", showgrid=False, title="precisão média (%)"))
             plot(fig)
     with c2:
         if mel.empty:
@@ -456,7 +501,9 @@ def aba_desempenho(c):
         tt = hp.assign(treino=hp["treino_id"].map(lambda x: nomes.get(x, x)))
         top = tt["treino"].value_counts().head(8).index
         tt = tt[tt["treino"].isin(top)].dropna(subset=["precisao"])
-        plot(px.box(tt, x="treino", y="precisao", title="Precisão por treino (8 mais executados)"))
+        tt = tt.assign(rotulo=tt["treino"].map(lambda x: curto(x, 22)))
+        plot(px.box(tt, x="rotulo", y="precisao", hover_name="treino", labels={"rotulo": "treino"},
+                    title="Precisão por treino (8 mais executados)"))
     c1, c2 = st.columns(2)
     with c1:
         cm = D.correlacao(hp)
@@ -507,7 +554,9 @@ def aba_treinos(c):
     with c2:
         if not hp.empty:
             top = hp["treino_id"].map(lambda x: nomes.get(x, x)).value_counts().head(10).rename_axis("treino").reset_index(name="execuções")
-            plot(px.bar(top.iloc[::-1], x="execuções", y="treino", orientation="h", title="Top 10 treinos mais executados"))
+            top = top.assign(rotulo=top["treino"].map(curto))
+            plot(px.bar(top.iloc[::-1], x="execuções", y="rotulo", hover_name="treino", labels={"rotulo": "treino"},
+                        orientation="h", title="Top 10 treinos mais executados"))
 
     section("Desafios personalizados")
     if d.empty:
@@ -575,7 +624,9 @@ def aba_gamificacao(c):
                         title="XP × sessões (cada ponto = um usuário)", opacity=.8))
     with c2:
         top = u.sort_values("xp", ascending=False).head(10)[["nome", "xp"]].iloc[::-1]
-        plot(px.bar(top, x="xp", y="nome", orientation="h", title="Top 10 em XP"))
+        top = top.assign(rotulo=top["nome"].map(curto))
+        plot(px.bar(top, x="xp", y="rotulo", hover_name="nome", labels={"rotulo": "usuário"},
+                    orientation="h", title="Top 10 em XP"))
     c1, c2 = st.columns(2)
     with c1:
         plot(px.histogram(u.dropna(subset=["maior_combo"]), x="maior_combo", nbins=15, title="Distribuição do maior combo"))
@@ -618,7 +669,9 @@ def aba_usuarios(c):
     with c1:
         top = r[r["treinos"] > 0].sort_values("treinos", ascending=False).head(10)[["nome", "treinos"]].iloc[::-1]
         if not top.empty:
-            plot(px.bar(top, x="treinos", y="nome", orientation="h", title="Top 10 usuários por nº de treinos"))
+            top = top.assign(rotulo=top["nome"].map(curto))
+            plot(px.bar(top, x="treinos", y="rotulo", hover_name="nome", labels={"rotulo": "usuário"},
+                        orientation="h", title="Top 10 usuários por nº de treinos"))
     with c2:
         if u["faixa"].notna().any():
             ft = r.dropna(subset=["faixa"]).groupby("faixa").agg(usuários=("id", "count"), treinos=("treinos", "sum"),
@@ -628,8 +681,8 @@ def aba_usuarios(c):
             fig.add_trace(go.Bar(x=ft["faixa"], y=ft["usuários"], name="Usuários", marker_color="#BFE3CD"))
             fig.add_trace(go.Scatter(x=ft["faixa"], y=ft["treinos por usuário"], name="Treinos por usuário",
                                      yaxis="y2", mode="lines+markers", line=dict(color=GREEN, width=3)))
-            fig.update_layout(title="Faixa etária: usuários e engajamento",
-                              yaxis2=dict(overlaying="y", side="right", showgrid=False))
+            fig.update_layout(title="Faixa etária: usuários e engajamento", yaxis_title="usuários",
+                              yaxis2=dict(overlaying="y", side="right", showgrid=False, title="treinos por usuário"))
             plot(fig)
 
     section("Usuários em risco", "Treinaram, mas não voltam há 8–30 dias — boas candidatas a uma notificação")
