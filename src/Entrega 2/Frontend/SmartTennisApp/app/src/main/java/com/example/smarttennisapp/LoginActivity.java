@@ -6,6 +6,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import android.view.View;
+import android.widget.ScrollView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -161,11 +162,34 @@ public class LoginActivity extends BaseActivity {
             startActivity(intent);
         });
 
+        ScrollView scrollFormulario = findViewById(R.id.scrollConteudoLogin);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            Insets teclado = insets.getInsets(WindowInsetsCompat.Type.ime());
+            int bottomInset = Math.max(systemBars.bottom, teclado.bottom);
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, bottomInset);
+
+            // Com o teclado aberto, mantém o campo focado dentro da área realmente visível.
+            if (teclado.bottom > 0 && scrollFormulario != null) {
+                scrollFormulario.post(() -> {
+                    View campoAtivo = getCurrentFocus();
+                    if (campoAtivo == null) return;
+                    android.graphics.Rect areaCampo = new android.graphics.Rect();
+                    campoAtivo.getDrawingRect(areaCampo);
+                    scrollFormulario.offsetDescendantRectToMyCoords(campoAtivo, areaCampo);
+                    int limiteInferior = scrollFormulario.getScrollY()
+                            + scrollFormulario.getHeight() - scrollFormulario.getPaddingBottom();
+                    if (areaCampo.bottom > limiteInferior) {
+                        scrollFormulario.smoothScrollBy(0, areaCampo.bottom - limiteInferior + dp(20));
+                    }
+                });
+            }
             return insets;
         });
+    }
+
+    private int dp(int valor) {
+        return (int) (valor * getResources().getDisplayMetrics().density + 0.5f);
     }
 
     private void aplicarAvatarRemoto(Usuario usuarioLocal, JSONObject autenticacao) {

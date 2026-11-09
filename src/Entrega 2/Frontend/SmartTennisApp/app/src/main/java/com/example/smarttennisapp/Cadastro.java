@@ -8,6 +8,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.view.View;
+import android.widget.ScrollView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -157,9 +158,28 @@ public class Cadastro extends BaseActivity {
             });
         });
 
+        ScrollView scrollFormulario = findViewById(R.id.scrollConteudoCadastro);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            Insets teclado = insets.getInsets(WindowInsetsCompat.Type.ime());
+            int bottomInset = Math.max(systemBars.bottom, teclado.bottom);
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, bottomInset);
+
+            // Com o teclado aberto, mantém o campo focado dentro da área realmente visível.
+            if (teclado.bottom > 0 && scrollFormulario != null) {
+                scrollFormulario.post(() -> {
+                    View campoAtivo = getCurrentFocus();
+                    if (campoAtivo == null) return;
+                    android.graphics.Rect areaCampo = new android.graphics.Rect();
+                    campoAtivo.getDrawingRect(areaCampo);
+                    scrollFormulario.offsetDescendantRectToMyCoords(campoAtivo, areaCampo);
+                    int limiteInferior = scrollFormulario.getScrollY()
+                            + scrollFormulario.getHeight() - scrollFormulario.getPaddingBottom();
+                    if (areaCampo.bottom > limiteInferior) {
+                        scrollFormulario.smoothScrollBy(0, areaCampo.bottom - limiteInferior + dp(20));
+                    }
+                });
+            }
             return insets;
         });
     }

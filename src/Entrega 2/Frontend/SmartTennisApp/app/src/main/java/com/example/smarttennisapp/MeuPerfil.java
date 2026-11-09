@@ -187,8 +187,7 @@ public class MeuPerfil extends BaseActivity {
     private void iniciarContagemCodigo(long duracaoMs) {
         if (timerCodigo != null) timerCodigo.cancel();
         if (duracaoMs <= 0) {
-            codigoAmizade.setText("••••••••");
-            validadeCodigo.setText("Código expirado. Gere outro para adicionar um amigo.");
+            restaurarVisualCodigoAmizade("Código expirado. Gere outro para adicionar um amigo.");
             return;
         }
         timerCodigo = new CountDownTimer(duracaoMs, 1000L) {
@@ -199,10 +198,36 @@ public class MeuPerfil extends BaseActivity {
             }
 
             @Override public void onFinish() {
-                codigoAmizade.setText("••••••••");
-                validadeCodigo.setText("Código expirado. Gere outro para adicionar um amigo.");
+                restaurarVisualCodigoAmizade("Código expirado. Gere outro para adicionar um amigo.");
             }
         }.start();
+    }
+
+    private void restaurarVisualCodigoAmizade(String mensagem) {
+        if (timerCodigo != null) {
+            timerCodigo.cancel();
+            timerCodigo = null;
+        }
+        codigoAmizade.setText("••••••••");
+        validadeCodigo.setText(mensagem);
+        btnGerarCodigo.setEnabled(true);
+        btnGerarCodigo.setText("Gerar código · 5 minutos");
+    }
+
+    @Override
+    protected void onFriendNotificationsReceived(JSONArray notificacoes) {
+        boolean amizadeRecebida = false;
+        for (int i = 0; i < notificacoes.length(); i++) {
+            JSONObject notificacao = notificacoes.optJSONObject(i);
+            if (notificacao != null && "AMIGO_ADICIONADO".equals(notificacao.optString("tipo"))) {
+                amizadeRecebida = true;
+            }
+        }
+        if (!amizadeRecebida || isFinishing() || isDestroyed()) return;
+
+        restaurarVisualCodigoAmizade("Gere um código para compartilhar com outro jogador. Toque no código para copiá-lo.");
+        Toast.makeText(this, "Seu código foi utilizado e a amizade foi confirmada.", Toast.LENGTH_LONG).show();
+        if (conteudoAmigos.getVisibility() == View.VISIBLE) carregarAmigos();
     }
 
     private void abrirDialogAdicionarAmigo() {

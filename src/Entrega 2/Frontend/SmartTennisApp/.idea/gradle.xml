@@ -8,8 +8,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/app" />
+            <option value="$USER_HOME$/Projects/Github/Projeto4/src/Entrega 2/Frontend/SmartTennisApp" />
+            <option value="$USER_HOME$/Projects/Github/Projeto4/src/Entrega 2/Frontend/SmartTennisApp/app" />
           </set>
         </option>
       </GradleProjectSettings>

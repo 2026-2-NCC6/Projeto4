@@ -13,6 +13,11 @@ Sem velocidade e sem janela ao vivo. O fluxo tem três etapas independentes:
   3. VÍDEO ANOTADO: gerado só DEPOIS, lendo a planilha (bola, rastro e impactos).
      Dá para editar a aba Impactos (apagar falsos) e gerar o vídeo de novo.
 
+Refino por ML (opcional, --ml): depois da detecção clássica, um modelo treinado com a própria
+trajetória confiável do vídeo (smarttennis_ml.py: TrackNet leve ou GBM) procura a bola só nas
+lacunas, em janelas pequenas em volta da posição esperada, e devolve os achados para a mesma
+etapa de trajetória/impactos. Sem --ml o comportamento é idêntico ao da versão anterior.
+
 Exemplos:
   python smarttennis_tracker.py video.mp4
   python smarttennis_tracker.py video.mp4 --grid 2x3 --area 0.1,0.05,0.9,0.7
@@ -33,17 +38,21 @@ from typing import Callable, Iterator, Optional
 import cv2
 import numpy as np
 
+if __name__ == "__main__":       # o módulo de ML faz `import smarttennis_tracker`: reaproveita este mesmo módulo
+    sys.modules.setdefault("smarttennis_tracker", sys.modules["__main__"])
+
 REF_WIDTH = 960.0   # largura de referência: áreas/saltos em px são definidos nela e escalados
 MAX_CANDS = 6       # candidatos guardados por quadro (os de maior pontuação)
 ProgressFn = Optional[Callable[[int, int], None]]
 
-ORIGINS = {1: "detectada", 0: "interpolada", 2: "prevista"}
+ORIGINS = {1: "detectada", 0: "interpolada", 2: "prevista", 3: "refinada-ml"}
 ORIGIN_CODES = {v: k for k, v in ORIGINS.items()}
 
 # rótulos da aba Resumo (o leitor da planilha procura por eles)
 L_FILE, L_FPS, L_W, L_H = "Arquivo", "FPS", "Largura (px)", "Altura (px)"
 L_FRAMES, L_OBS, L_ANY = "Quadros analisados", "Quadros com bola detectada", "Quadros com bola (inclui interpolados e previstos)"
 L_PRED = "Quadros com bola prevista (perdida)"
+L_ML = "Quadros com bola achada pelo refino ML"
 L_COLS, L_ROWS, L_AREA = "Grade: colunas", "Grade: linhas", "Grade: área (x0,y0,x1,y1 normalizado)"
 
 
@@ -73,6 +82,14 @@ class Config:
     max_predict: int = 12          # quadros que a bola perdida continua sendo prevista (trajetória balística)
     min_speed: float = 6.0         # velocidade mediana mínima (px/quadro em REF_WIDTH): ignora bola rolando/parada
     max_bridge: int = 20           # maior buraco (quadros) preenchido entre duas detecções coerentes
+    # --- refino por ML depois da detecção clássica (ver smarttennis_ml.py) ---
+    ml: str = "off"                # off | auto (TrackNet se houver PyTorch, senão GBM) | tracknet | gbm
+    ml_width: int = 1280           # largura em que o ML enxerga os quadros (maior = bola maior, mais lento)
+    ml_crop: int = 96              # janela de busca em px (múltiplo de 8) em volta da posição esperada da bola
+    ml_conf: float = 0.0           # limiar de confiança do pico (0 = calibrado sozinho na validação)
+    ml_weights: str = ""           # arquivo do modelo: carrega se existir; senão treina e salva aí
+    ml_epochs: int = 0             # épocas do TrackNet (0 = automático)
+    ml_retrain: bool = False       # ignora o arquivo de pesos existente e treina de novo
 
     def validate(self) -> None:
         if any(a > b for a, b in zip(self.hsv_low, self.hsv_high)):
@@ -84,6 +101,12 @@ class Config:
         parse_area(self.area)
         if self.impact_mode not in ("parede", "todos", "chao"):
             raise ValueError("Modo de impacto inválido: use parede, todos ou chao.")
+        if self.ml not in ("off", "auto", "tracknet", "gbm"):
+            raise ValueError("Modo de ML inválido: use off, auto, tracknet ou gbm.")
+        if not (48 <= self.ml_crop <= 192 and self.ml_crop % 8 == 0):
+            raise ValueError("A janela do ML deve ser múltiplo de 8 entre 48 e 192 px.")
+        if self.ml_width < 320:
+            raise ValueError("A largura do ML deve ser de pelo menos 320 px.")
 
 
 def parse_polygon(text: Optional[str], width: int, height: int) -> Optional[np.ndarray]:
@@ -824,7 +847,7 @@ class Result:
         return counts
 
     @property
-    def n_observed(self) -> int:
+    def n_observed(self) -> int:           # detectados pela etapa clássica
         return sum(1 for p in self.pos if p is not None and p[2] == 1)
 
     @property
@@ -835,19 +858,35 @@ class Result:
     def n_predicted(self) -> int:
         return sum(1 for p in self.pos if p is not None and p[2] == 2)
 
+    @property
+    def n_ml(self) -> int:
+        return sum(1 for p in self.pos if p is not None and p[2] == 3)
 
-def analyze(video_path, cfg: Config, progress: ProgressFn = None) -> Result:
-    cfg.validate()
+
+@dataclass
+class Scan:
+    """O que a etapa 1 (candidatos por quadro) entrega e as etapas seguintes reaproveitam."""
+    info: VideoInfo
+    pw: int                     # largura de processamento
+    ph: int
+    scale: float                # pw / REF_WIDTH
+    cands: list                 # por quadro: [(x, y, raio, pontuação)] em px de processamento
+    cut_cum: list               # cortes de cena acumulados até cada quadro
+
+    @property
+    def n_frames(self) -> int:
+        return len(self.cands)
+
+
+def scan_video(video_path, cfg: Config, progress: ProgressFn = None) -> Scan:
     info = probe_video(video_path)
     pw = info.width
     if cfg.max_width > 0 and info.width > cfg.max_width:
         pw = cfg.max_width
     pw = max(2, pw)
     ph = max(2, int(round(info.height * pw / info.width)))
-    area = parse_area(cfg.area)
     polygon = parse_polygon(cfg.roi, pw, ph)
     det = BallDetector(pw, ph, cfg, polygon)
-    scale = det.scale
     total = info.frames
 
     cands: list = []
@@ -861,18 +900,33 @@ def analyze(video_path, cfg: Config, progress: ProgressFn = None) -> Result:
         cut_cum.append(cuts)
         if progress and len(cands) % 30 == 0:
             progress(len(cands), total)
-    n_frames = len(cands)
     if progress:
-        progress(n_frames, max(total, n_frames))
+        progress(len(cands), max(total, len(cands)))
+    return Scan(info, pw, ph, det.scale, cands, cut_cum)
 
-    chains = link_trajectory(cands, cut_cum, scale, cfg.max_jump * scale, cfg.max_gap, cfg.min_track_len,
+
+def track_scan(scan: Scan, cfg: Config):
+    """Candidatos -> trajetória clássica. Retorna (observações [(quadro, x, y)], gravidade px/quadro²)."""
+    scale = scan.scale
+    chains = link_trajectory(scan.cands, scan.cut_cum, scale, cfg.max_jump * scale, cfg.max_gap, cfg.min_track_len,
                              cfg.min_speed * scale)
     chains = [c for c in (clean_chain(c, scale, cfg.min_track_len) for c in chains) if c]
     grav = estimate_gravity(chains, scale)
     obs = select_track(chains, scale, cfg.max_bridge, grav)
+    return obs, grav
 
+
+def finalize(video_path, scan: Scan, cfg: Config, obs: list, grav: float, ml_frames=(),
+             ml_info: Optional[dict] = None) -> Result:
+    """Observações -> posição por quadro, impactos e quadrantes. `ml_frames`: quadros cujas
+    observações vieram do refino por ML (ficam com origem 'refinada-ml')."""
+    info, pw, ph, scale, n_frames = scan.info, scan.pw, scan.ph, scan.scale, scan.n_frames
+    area = parse_area(cfg.area)
     kx, ky = info.width / pw, info.height / ph          # coordenadas de processamento -> originais
     pos_proc = build_positions(obs, n_frames, scale, cfg.max_gap, cfg.max_bridge, cfg.max_predict, pw, ph, grav)
+    for t in ml_frames:
+        if 0 <= t < n_frames and pos_proc[t] is not None and pos_proc[t][2] == 1:
+            pos_proc[t] = (pos_proc[t][0], pos_proc[t][1], 3)
     pos = [None if p is None else (round(p[0] * kx, 2), round(p[1] * ky, 2), p[2]) for p in pos_proc]
 
     def make_impact(n: int, d: dict) -> Impact:
@@ -901,8 +955,32 @@ def analyze(video_path, cfg: Config, progress: ProgressFn = None) -> Result:
         "Velocidade mediana mínima (px/quadro em 960 px)": f"{cfg.min_speed:g}",
         "Predição após perder a bola (quadros)": f"{cfg.max_predict}", "Buraco máx. preenchido (quadros)": f"{cfg.max_bridge}",
     }
+    if ml_info:
+        params.update(ml_info)
     return Result(Path(str(video_path)).name, info.fps, info.width, info.height, cfg.grid_cols, cfg.grid_rows,
                   area, pos, impacts, params, ignored)
+
+
+def analyze(video_path, cfg: Config, progress: ProgressFn = None,
+            log: Optional[Callable[[str], None]] = None) -> Result:
+    """Etapa 1 clássica (cor + movimento + trajetória) e, se cfg.ml != 'off', o refino por ML
+    das lacunas. `log` recebe mensagens de andamento do refino (opcional)."""
+    cfg.validate()
+    scan = scan_video(video_path, cfg, progress)
+    obs, grav = track_scan(scan, cfg)
+    ml_frames, ml_info = (), None
+    if cfg.ml != "off":
+        try:
+            import smarttennis_ml as ml
+            obs, ml_frames, ml_info = ml.refine(video_path, scan, obs, grav, cfg, progress, log)
+        except Exception as exc:                  # o refino nunca pode derrubar nem piorar a análise clássica
+            msg = f"refino por ML desligado ({type(exc).__name__}: {exc})"
+            if log:
+                log("AVISO: " + msg)
+            ml_info = {"ML: estado": msg}
+    return finalize(video_path, scan, cfg, obs, grav, ml_frames, ml_info)
+
+
 
 
 # --------------------------------------------------------------------------
@@ -926,7 +1004,7 @@ def write_xlsx(result: Result, path) -> None:
     ws["A1"].font = Font(bold=True, size=14)
     meta = [(L_FILE, result.video_name), (L_FPS, round(result.fps, 4)), (L_W, W), (L_H, H),
             (L_FRAMES, len(result.pos)), (L_OBS, result.n_observed), (L_ANY, result.n_with_ball),
-            (L_PRED, result.n_predicted),
+            (L_PRED, result.n_predicted), (L_ML, result.n_ml),
             (L_COLS, cols), (L_ROWS, rows), (L_AREA, ",".join(f"{v:g}" for v in result.area)),
             ("Impactos detectados", len(result.impacts)),
             ("Impactos fora da área da grade", sum(1 for i in result.impacts if i.quadrant is None))]
@@ -1115,7 +1193,7 @@ def render_video(video_path, result: Result, out_path, render_width: int = 960,
                 for (xa, ya, st), (xb, yb, _) in zip(run, run[1:]):   # laranja = trecho previsto
                     cv2.line(frame, (xa, ya), (xb, yb), (0, 140, 255) if st == 2 else (255, 255, 0), max(1, 2 * th), cv2.LINE_AA)
                 state = run[0][2]
-                color = {1: (0, 255, 0), 0: (0, 215, 255), 2: (0, 140, 255)}[state]
+                color = {1: (0, 255, 0), 0: (0, 215, 255), 2: (0, 140, 255), 3: (255, 0, 255)}[state]
                 cv2.circle(frame, run[0][:2], int(8 * sc), color, th + 1, cv2.LINE_AA)
                 if state == 2:
                     cv2.putText(frame, "prevista", (run[0][0] + int(12 * sc), run[0][1] + int(18 * sc)), font, fs * 0.8,
@@ -1197,6 +1275,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-predict", type=int, default=12,
                    help="quadros em que a bola perdida segue sendo prevista (0 = não prever)")
     p.add_argument("--max-bridge", type=int, default=20, help="maior buraco (quadros) preenchido entre detecções coerentes")
+    p.add_argument("--ml", choices=("auto", "tracknet", "gbm", "off"), default="auto",
+                   help="refino por ML das lacunas depois da detecção clássica: auto (TrackNet se houver PyTorch, "
+                        "senão GBM), tracknet, gbm ou off (padrão: auto)")
+    p.add_argument("--ml-width", type=int, default=1280, help="largura em que o ML enxerga os quadros (padrão 1280)")
+    p.add_argument("--ml-crop", type=int, default=96, help="janela de busca do ML em px, múltiplo de 8 (padrão 96)")
+    p.add_argument("--ml-conf", type=float, default=0.0, help="limiar de confiança do ML (0 = calibrado sozinho)")
+    p.add_argument("--ml-weights", default="",
+                   help="caminho-base do modelo (cria .pt ou .gbm.joblib): carrega se existir, senão treina e salva")
+    p.add_argument("--ml-epochs", type=int, default=0, help="épocas do TrackNet (0 = automático)")
+    p.add_argument("--ml-retrain", action="store_true", help="treina de novo mesmo que o arquivo do modelo exista")
     return p
 
 
@@ -1230,14 +1318,17 @@ def main() -> int:
                          max_jump=args.max_jump, max_gap=max(0, args.max_gap), min_speed=max(0.0, args.min_speed), min_track_len=max(3, args.min_track),
                          grid_cols=cols, grid_rows=rows, area=args.area, impact_angle=args.impact_angle,
                          min_impact_gap=max(1, args.min_impact_gap), impact_mode=args.impacts,
-                         max_predict=max(0, args.max_predict), max_bridge=max(args.max_gap, args.max_bridge))
+                         max_predict=max(0, args.max_predict), max_bridge=max(args.max_gap, args.max_bridge),
+                         ml=args.ml, ml_width=args.ml_width, ml_crop=args.ml_crop, ml_conf=max(0.0, args.ml_conf),
+                         ml_weights=args.ml_weights, ml_epochs=max(0, args.ml_epochs), ml_retrain=args.ml_retrain)
             print(f"Analisando {video.name} ...")
-            result = analyze(video, cfg, bar("Análise"))
+            result = analyze(video, cfg, bar("Análise"), log=lambda m: print(m, flush=True))
             xlsx.parent.mkdir(parents=True, exist_ok=True)
             write_xlsx(result, xlsx)
             print(f"\nPlanilha: {xlsx}")
             print(f"Quadros: {len(result.pos)} | com bola: {result.n_with_ball} "
-                  f"({result.n_observed} detectados, {result.n_predicted} previstos)")
+                  f"({result.n_observed} detectados, {result.n_predicted} previstos"
+                  + (f", {result.n_ml} achados pelo refino ML" if cfg.ml != "off" else "") + ")")
             print(f"Impactos: {len(result.impacts)}" + (f" (+{len(result.ignored)} ignorados pelo modo '{cfg.impact_mode}')" if result.ignored else ""))
             for q, n in result.counts.items():
                 print(f"  Q{q} ({quadrant_label(q, result.cols, result.rows)}): {n}" + ("  <- bateu" if n else ""))

@@ -31,8 +31,8 @@ for key, value in {"file_id": None, "video_path": None, "video_name": None, "res
     ss.setdefault(key, value)
 
 st.title("🎾 SmartTennis — onde a bola bateu")
-st.caption("Detecção clássica (OpenCV, sem redes neurais). A tela é dividida em quadrantes e cada impacto "
-           "da bola é registrado na planilha; o vídeo anotado é gerado só depois da análise.")
+st.caption("Detecção clássica (OpenCV) + refino opcional por ML nas lacunas. A tela é dividida em quadrantes e cada "
+           "impacto da bola é registrado na planilha; o vídeo anotado é gerado só depois da análise.")
 
 uploaded = st.file_uploader("Vídeo de treino", type=["mp4", "mov", "avi", "mkv", "m4v"])
 if uploaded is None:
@@ -90,6 +90,17 @@ with st.sidebar:
         use_motion = st.checkbox("Exigir movimento (ignora objetos amarelos parados)", value=True)
         roi_text = st.text_input("ROI onde procurar a bola (opcional)", value="",
                                  placeholder="0.18,0.12;0.90,0.18;0.98,0.92;0.08,0.95")
+    with st.expander("Refino por ML (preenche lacunas da detecção clássica)"):
+        ml_on = st.checkbox("Ligar refino por ML", value=True,
+                            help="Depois da detecção clássica, um modelo treinado com a própria trajetória do vídeo "
+                                 "procura a bola só nas lacunas. Só adiciona pontos; não remove detecções clássicas.")
+        ml_mode = st.selectbox("Modelo", ["auto", "tracknet", "gbm"], index=0,
+                               help="auto = TrackNet leve se o PyTorch estiver instalado, senão GBM (scikit-learn).")
+        ml_width = st.select_slider("Largura vista pelo ML (maior = mais preciso e mais lento)",
+                                    options=[640, 960, 1280, 1600, 1920], value=1280)
+        ml_weights = st.text_input("Arquivo do modelo (opcional)", value="",
+                                   placeholder="modelos/bola",
+                                   help="Se existir, é carregado (sem treinar); senão treina e salva. Cria .pt ou .gbm.joblib.")
     render_width = st.select_slider("Largura do vídeo anotado", options=[640, 960, 1280, 1920], value=960)
 
 cols, rows = GRIDS[grid_name]
@@ -98,7 +109,8 @@ cfg = tk.Config(hsv_low=(h_low, s_low, v_low), hsv_high=(h_high, s_high, v_high)
                 roi=roi_text.strip(), use_motion=use_motion, max_jump=float(max_jump), max_gap=int(max_gap),
                 grid_cols=cols, grid_rows=rows, area=area_text.strip(), impact_angle=float(impact_angle),
                 impact_mode=IMPACT_MODES[impact_name], max_predict=int(max_predict), min_speed=float(min_speed),
-                max_bridge=max(int(max_gap), 20))
+                max_bridge=max(int(max_gap), 20),
+                ml=ml_mode if ml_on else "off", ml_width=int(ml_width), ml_weights=ml_weights.strip())
 
 # ---------------------------------------------------------------- 1) análise
 if st.button("1) Analisar vídeo e gerar planilha", type="primary"):
@@ -108,7 +120,9 @@ if st.button("1) Analisar vídeo e gerar planilha", type="primary"):
         def on_progress(done: int, total: int) -> None:
             bar.progress(min(1.0, done / max(1, total)), text=f"Analisando… quadro {done:,} de {total:,}")
 
-        result = tk.analyze(ss.video_path, cfg, on_progress)
+        status = st.empty()
+        result = tk.analyze(ss.video_path, cfg, on_progress, log=lambda m: status.caption(m))
+        status.empty()
         OUT_DIR.mkdir(exist_ok=True)
         xlsx_path = OUT_DIR / f"{Path(ss.video_name).stem}_tracking.xlsx"
         tk.write_xlsx(result, xlsx_path)
@@ -126,7 +140,8 @@ n_frames = max(1, len(result.pos))
 m1, m2, m3 = st.columns(3)
 m1.metric("Quadros analisados", f"{len(result.pos):,}")
 m2.metric("Quadros com bola", f"{result.n_with_ball / n_frames * 100:.1f}%",
-          help=f"{result.n_observed:,} detectados, {result.n_with_ball - result.n_observed - result.n_predicted:,} "
+          help=f"{result.n_observed:,} detectados, {result.n_ml:,} achados pelo refino ML, "
+               f"{result.n_with_ball - result.n_observed - result.n_ml - result.n_predicted:,} "
                f"interpolados e {result.n_predicted:,} previstos (bola perdida)")
 m3.metric("Impactos", len(result.impacts))
 

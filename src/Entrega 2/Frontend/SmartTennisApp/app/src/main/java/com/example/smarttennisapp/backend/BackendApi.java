@@ -93,6 +93,10 @@ public final class BackendApi {
         return request(context, "GET", "/api/friends", token, null);
     }
 
+    public static JSONObject listarNotificacoesAmizade(Context context, String token) throws IOException {
+        return request(context, "GET", "/api/friends/notifications", token, null);
+    }
+
     public static JSONObject listarDesafiosCompartilhados(Context context, String token, int limite) throws IOException {
         int tamanho = Math.max(1, Math.min(100, limite));
         return request(context, "GET", "/api/challenges/shared?limit=" + tamanho, token, null);

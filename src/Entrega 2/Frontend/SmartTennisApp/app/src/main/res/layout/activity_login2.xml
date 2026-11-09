@@ -29,7 +29,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:fillViewport="false"
+        android:fillViewport="true"
         android:overScrollMode="ifContentScrolls"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
